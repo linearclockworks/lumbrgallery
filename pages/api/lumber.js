@@ -1,5 +1,4 @@
 import { google } from 'googleapis';
-import fs from 'fs';
 import path from 'path';
 
 const FOLDER_ID = "1HZ5UYhlecNFZgn_ibUiOK7lzeuxc6t1o";
@@ -7,7 +6,7 @@ const FOLDER_ID = "1HZ5UYhlecNFZgn_ibUiOK7lzeuxc6t1o";
 function loadMetadata() {
   try {
     const metaPath = path.join(process.cwd(), 'lumber.json');
-    const data = fs.readFileSync(metaPath, 'utf-8');
+    const data = require('fs').readFileSync(metaPath, 'utf-8');
     return JSON.parse(data);
   } catch {
     return {};
@@ -15,10 +14,15 @@ function loadMetadata() {
 }
 
 async function getGoogleAuth() {
-  const credPath = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
-  if (!credPath) throw new Error('GOOGLE_SERVICE_ACCOUNT_KEY not set');
+  const credString = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
+  if (!credString) throw new Error('GOOGLE_SERVICE_ACCOUNT_KEY not set');
   
-  const creds = JSON.parse(fs.readFileSync(credPath, 'utf-8'));
+  let creds;
+  try {
+    creds = JSON.parse(credString);
+  } catch (e) {
+    throw new Error('GOOGLE_SERVICE_ACCOUNT_KEY is not valid JSON: ' + e.message);
+  }
   
   const auth = new google.auth.GoogleAuth({
     credentials: creds,
