@@ -1,20 +1,713 @@
 {
-  "885": {
-    "serialno": "LCK-001",
-    "species": "walnut",
-    "length": 48,
-    "width": 12,
-    "owner": "Bryan",
-    "location": "shop",
-    "comments": "quartersawn, tight grain"
-  },
-  "886": {
-    "serialno": "LCK-002",
-    "species": "cherry",
-    "length": 36,
-    "width": 8,
+  "1044": {
+    "serialno": "1044",
+    "species": "",
+    "length": "",
+    "width": "",
     "owner": "TKS",
-    "location": "storage",
-    "comments": "UV faded, good for backs"
+    "location": "TKS",
+    "comments": ""
+  },
+  "1042": {
+    "serialno": "1042",
+    "species": "",
+    "length": "",
+    "width": "",
+    "owner": "TKS",
+    "location": "TKS",
+    "comments": ""
+  },
+  "1031": {
+    "serialno": "1031",
+    "species": "",
+    "length": "",
+    "width": "",
+    "owner": "TKS",
+    "location": "TKS",
+    "comments": ""
+  },
+  "1029": {
+    "serialno": "1029",
+    "species": "",
+    "length": "",
+    "width": "",
+    "owner": "TKS",
+    "location": "TKS",
+    "comments": ""
+  },
+  "1027": {
+    "serialno": "1027",
+    "species": "",
+    "length": "",
+    "width": "",
+    "owner": "TKS",
+    "location": "TKS",
+    "comments": ""
+  },
+  "1026": {
+    "serialno": "1026",
+    "species": "",
+    "length": "",
+    "width": "",
+    "owner": "TKS",
+    "location": "TKS",
+    "comments": ""
+  },
+  "1018": {
+    "serialno": "1018",
+    "species": "",
+    "length": "",
+    "width": "",
+    "owner": "TKS",
+    "location": "TKS",
+    "comments": ""
+  },
+  "1016": {
+    "serialno": "1016",
+    "species": "",
+    "length": "",
+    "width": "",
+    "owner": "TKS",
+    "location": "TKS",
+    "comments": ""
+  },
+  "955": {
+    "serialno": "955",
+    "species": "",
+    "length": "",
+    "width": "",
+    "owner": "TKS",
+    "location": "TKS",
+    "comments": ""
+  },
+  "947": {
+    "serialno": "947",
+    "species": "",
+    "length": "",
+    "width": "",
+    "owner": "TKS",
+    "location": "TKS",
+    "comments": ""
+  },
+  "946": {
+    "serialno": "946",
+    "species": "",
+    "length": "",
+    "width": "",
+    "owner": "TKS",
+    "location": "TKS",
+    "comments": ""
+  },
+  "945": {
+    "serialno": "945",
+    "species": "",
+    "length": "",
+    "width": "",
+    "owner": "TKS",
+    "location": "TKS",
+    "comments": ""
+  },
+  "943": {
+    "serialno": "943",
+    "species": "",
+    "length": "",
+    "width": "",
+    "owner": "TKS",
+    "location": "TKS",
+    "comments": ""
+  },
+  "942": {
+    "serialno": "942",
+    "species": "",
+    "length": "",
+    "width": "",
+    "owner": "TKS",
+    "location": "TKS",
+    "comments": ""
+  },
+  "941": {
+    "serialno": "941",
+    "species": "",
+    "length": "",
+    "width": "",
+    "owner": "TKS",
+    "location": "TKS",
+    "comments": ""
+  },
+  "882": {
+    "serialno": "882",
+    "species": "",
+    "length": "",
+    "width": "",
+    "owner": "TKS",
+    "location": "TKS",
+    "comments": ""
+  },
+  "1050": {
+    "serialno": "1050",
+    "species": "",
+    "length": "",
+    "width": "",
+    "owner": "LCW",
+    "location": "SNB",
+    "comments": "cut top straight leaving some sapwood; one clock, not quite room for a river so just letters"
+  },
+  "1049": {
+    "serialno": "1049",
+    "species": "",
+    "length": "",
+    "width": "",
+    "owner": "LCW",
+    "location": "SNB",
+    "comments": "could make 2 clocks. not light, not dark, so resin color?"
+  },
+  "f1037": {
+    "serialno": "f1037",
+    "species": "",
+    "length": "",
+    "width": "",
+    "owner": "LCW",
+    "location": "SNB",
+    "comments": ""
+  },
+  "1036": {
+    "serialno": "1036",
+    "species": "",
+    "length": "",
+    "width": "",
+    "owner": "LCW",
+    "location": "SNB",
+    "comments": "hard to figure hoiw to cut it. !!\" goes to 6\" if we straighten the curved edge."
+  },
+  "1033": {
+    "serialno": "1033",
+    "species": "",
+    "length": "",
+    "width": "",
+    "owner": "LCW",
+    "location": "SNB",
+    "comments": "13\""
+  },
+  "1007": {
+    "serialno": "1007",
+    "species": "",
+    "length": "",
+    "width": "",
+    "owner": "LCW",
+    "location": "SNB",
+    "comments": ""
+  },
+  "916": {
+    "serialno": "916",
+    "species": "",
+    "length": "",
+    "width": "",
+    "owner": "TKS",
+    "location": "SNB",
+    "comments": "7\" wide: 5-foot through river would make sense maybe"
+  },
+  "885": {
+    "serialno": "885",
+    "species": "",
+    "length": "",
+    "width": "",
+    "owner": "LCW",
+    "location": "SNB",
+    "comments": "cant tell the size on this one."
+  },
+  "1059": {
+    "serialno": "1059",
+    "species": "",
+    "length": "",
+    "width": "",
+    "owner": "LCW",
+    "location": "",
+    "comments": ""
+  },
+  "1058": {
+    "serialno": "1058",
+    "species": "",
+    "length": "",
+    "width": "",
+    "owner": "LCW",
+    "location": "",
+    "comments": ""
+  },
+  "1055": {
+    "serialno": "1055",
+    "species": "",
+    "length": "",
+    "width": "",
+    "owner": "LCW",
+    "location": "",
+    "comments": ""
+  },
+  "1051": {
+    "serialno": "1051",
+    "species": "",
+    "length": "",
+    "width": "",
+    "owner": "LCW",
+    "location": "",
+    "comments": ""
+  },
+  "1048": {
+    "serialno": "1048",
+    "species": "",
+    "length": "",
+    "width": "",
+    "owner": "LCW",
+    "location": "",
+    "comments": ""
+  },
+  "1038": {
+    "serialno": "1038",
+    "species": "",
+    "length": "",
+    "width": "",
+    "owner": "LCW",
+    "location": "",
+    "comments": ""
+  },
+  "901": {
+    "serialno": "901",
+    "species": "",
+    "length": "",
+    "width": "",
+    "owner": "LCW",
+    "location": "",
+    "comments": ""
+  },
+  "1057": {
+    "serialno": "1057",
+    "species": "",
+    "length": "",
+    "width": "",
+    "owner": "LCW",
+    "location": "",
+    "comments": ""
+  },
+  "1034B": {
+    "serialno": "1034B",
+    "species": "",
+    "length": "",
+    "width": "",
+    "owner": "LCW",
+    "location": "",
+    "comments": ""
+  },
+  "1034A": {
+    "serialno": "1034A",
+    "species": "",
+    "length": "",
+    "width": "",
+    "owner": "LCW",
+    "location": "",
+    "comments": ""
+  },
+  "1056": {
+    "serialno": "1056",
+    "species": "",
+    "length": "",
+    "width": "",
+    "owner": "LCW",
+    "location": "",
+    "comments": ""
+  },
+  "1054": {
+    "serialno": "1054",
+    "species": "",
+    "length": "",
+    "width": "",
+    "owner": "LCW",
+    "location": "",
+    "comments": ""
+  },
+  "1053": {
+    "serialno": "1053",
+    "species": "",
+    "length": "",
+    "width": "",
+    "owner": "LCW",
+    "location": "",
+    "comments": ""
+  },
+  "1052": {
+    "serialno": "1052",
+    "species": "",
+    "length": "",
+    "width": "",
+    "owner": "LCW",
+    "location": "",
+    "comments": ""
+  },
+  "1047": {
+    "serialno": "1047",
+    "species": "",
+    "length": "",
+    "width": "",
+    "owner": "LCW ",
+    "location": "",
+    "comments": ""
+  },
+  "1046": {
+    "serialno": "1046",
+    "species": "",
+    "length": "",
+    "width": "",
+    "owner": "TKS",
+    "location": "",
+    "comments": ""
+  },
+  "1045": {
+    "serialno": "1045",
+    "species": "",
+    "length": "",
+    "width": "",
+    "owner": "TKS",
+    "location": "",
+    "comments": ""
+  },
+  "1043": {
+    "serialno": "1043",
+    "species": "",
+    "length": "",
+    "width": "",
+    "owner": "TKS",
+    "location": "",
+    "comments": ""
+  },
+  "1041": {
+    "serialno": "1041",
+    "species": "",
+    "length": "",
+    "width": "",
+    "owner": "LCW",
+    "location": "",
+    "comments": ""
+  },
+  "1040": {
+    "serialno": "1040",
+    "species": "",
+    "length": "",
+    "width": "",
+    "owner": "LCW",
+    "location": "",
+    "comments": ""
+  },
+  "1039": {
+    "serialno": "1039",
+    "species": "",
+    "length": "",
+    "width": "",
+    "owner": "LCW",
+    "location": "",
+    "comments": ""
+  },
+  "1035": {
+    "serialno": "1035",
+    "species": "",
+    "length": "",
+    "width": "",
+    "owner": "LCW",
+    "location": "",
+    "comments": ""
+  },
+  "1032": {
+    "serialno": "1032",
+    "species": "",
+    "length": "",
+    "width": "",
+    "owner": "TKS",
+    "location": "",
+    "comments": ""
+  },
+  "1030": {
+    "serialno": "1030",
+    "species": "",
+    "length": "",
+    "width": "",
+    "owner": "TKS",
+    "location": "",
+    "comments": ""
+  },
+  "1028": {
+    "serialno": "1028",
+    "species": "",
+    "length": "",
+    "width": "",
+    "owner": "TKS",
+    "location": "",
+    "comments": ""
+  },
+  "1025": {
+    "serialno": "1025",
+    "species": "",
+    "length": "",
+    "width": "",
+    "owner": "TKS",
+    "location": "",
+    "comments": ""
+  },
+  "1024": {
+    "serialno": "1024",
+    "species": "",
+    "length": "",
+    "width": "",
+    "owner": "TKS",
+    "location": "",
+    "comments": ""
+  },
+  "1023": {
+    "serialno": "1023",
+    "species": "",
+    "length": "",
+    "width": "",
+    "owner": "TKS",
+    "location": "",
+    "comments": ""
+  },
+  "1022": {
+    "serialno": "1022",
+    "species": "3 foot Walnut",
+    "length": "",
+    "width": "",
+    "owner": "TKS",
+    "location": "",
+    "comments": ""
+  },
+  "1021": {
+    "serialno": "1021",
+    "species": "",
+    "length": "",
+    "width": "",
+    "owner": "TKS",
+    "location": "",
+    "comments": ""
+  },
+  "1020": {
+    "serialno": "1020",
+    "species": "",
+    "length": "",
+    "width": "",
+    "owner": "TKS",
+    "location": "",
+    "comments": ""
+  },
+  "1019": {
+    "serialno": "1019",
+    "species": "5 foot Butternut live edge ",
+    "length": "",
+    "width": "",
+    "owner": "TKS",
+    "location": "",
+    "comments": ""
+  },
+  "1017": {
+    "serialno": "1017",
+    "species": "",
+    "length": "",
+    "width": "",
+    "owner": "TKS",
+    "location": "",
+    "comments": ""
+  },
+  "1015": {
+    "serialno": "1015",
+    "species": "",
+    "length": "",
+    "width": "",
+    "owner": "TKS",
+    "location": "",
+    "comments": ""
+  },
+  "1014": {
+    "serialno": "1014",
+    "species": "",
+    "length": "",
+    "width": "",
+    "owner": "TKS",
+    "location": "",
+    "comments": ""
+  },
+  "1013": {
+    "serialno": "1013",
+    "species": "",
+    "length": "",
+    "width": "",
+    "owner": "TKS",
+    "location": "",
+    "comments": ""
+  },
+  "1012": {
+    "serialno": "1012",
+    "species": "",
+    "length": "",
+    "width": "",
+    "owner": "TKS",
+    "location": "",
+    "comments": ""
+  },
+  "1011": {
+    "serialno": "1011",
+    "species": "",
+    "length": "",
+    "width": "",
+    "owner": "LCW",
+    "location": "",
+    "comments": ""
+  },
+  "1010": {
+    "serialno": "1010",
+    "species": "",
+    "length": "",
+    "width": "",
+    "owner": "LCW",
+    "location": "",
+    "comments": ""
+  },
+  "1009": {
+    "serialno": "1009",
+    "species": "",
+    "length": "",
+    "width": "",
+    "owner": "LCW",
+    "location": "",
+    "comments": ""
+  },
+  "1008": {
+    "serialno": "1008",
+    "species": "",
+    "length": "",
+    "width": "",
+    "owner": "LCW",
+    "location": "",
+    "comments": ""
+  },
+  "1005": {
+    "serialno": "1005",
+    "species": "",
+    "length": "",
+    "width": "",
+    "owner": "LCW",
+    "location": "",
+    "comments": ""
+  },
+  "1004": {
+    "serialno": "1004",
+    "species": "",
+    "length": "",
+    "width": "",
+    "owner": "LCW",
+    "location": "",
+    "comments": ""
+  },
+  "1002": {
+    "serialno": "1002",
+    "species": "",
+    "length": "",
+    "width": "",
+    "owner": "LCW",
+    "location": "",
+    "comments": ""
+  },
+  "1001": {
+    "serialno": "1001",
+    "species": "",
+    "length": "",
+    "width": "",
+    "owner": "LCW",
+    "location": "",
+    "comments": ""
+  },
+  "971": {
+    "serialno": "971",
+    "species": "",
+    "length": "",
+    "width": "",
+    "owner": "LCW",
+    "location": "",
+    "comments": ""
+  },
+  "967": {
+    "serialno": "967",
+    "species": "",
+    "length": "",
+    "width": "",
+    "owner": "TKS",
+    "location": "",
+    "comments": ""
+  },
+  "959": {
+    "serialno": "959",
+    "species": "",
+    "length": "",
+    "width": "",
+    "owner": "TKS",
+    "location": "",
+    "comments": ""
+  },
+  "958": {
+    "serialno": "958",
+    "species": "",
+    "length": "",
+    "width": "",
+    "owner": "TKS",
+    "location": "",
+    "comments": ""
+  },
+  "957": {
+    "serialno": "957",
+    "species": "",
+    "length": "",
+    "width": "",
+    "owner": "TKS",
+    "location": "",
+    "comments": ""
+  },
+  "956": {
+    "serialno": "956",
+    "species": "",
+    "length": "",
+    "width": "",
+    "owner": "TKS",
+    "location": "",
+    "comments": ""
+  },
+  "936": {
+    "serialno": "936",
+    "species": "",
+    "length": "",
+    "width": "",
+    "owner": "LCW",
+    "location": "",
+    "comments": ""
+  },
+  "935": {
+    "serialno": "935",
+    "species": "",
+    "length": "",
+    "width": "",
+    "owner": "LCW",
+    "location": "",
+    "comments": ""
+  },
+  "917": {
+    "serialno": "917",
+    "species": "",
+    "length": "",
+    "width": "",
+    "owner": "LCW",
+    "location": "",
+    "comments": ""
+  },
+  "893": {
+    "serialno": "893",
+    "species": "",
+    "length": "",
+    "width": "",
+    "owner": "TKS",
+    "location": "",
+    "comments": ""
   }
 }
