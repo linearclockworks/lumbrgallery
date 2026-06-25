@@ -1,0 +1,20 @@
+{
+  "885": {
+    "serialno": "LCK-001",
+    "species": "walnut",
+    "length": 48,
+    "width": 12,
+    "owner": "Bryan",
+    "location": "shop",
+    "comments": "quartersawn, tight grain"
+  },
+  "886": {
+    "serialno": "LCK-002",
+    "species": "cherry",
+    "length": 36,
+    "width": 8,
+    "owner": "TKS",
+    "location": "storage",
+    "comments": "UV faded, good for backs"
+  }
+}
