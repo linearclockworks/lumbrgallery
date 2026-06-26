@@ -91,7 +91,7 @@ export default async function handler(req, res) {
         fileId: serial,
         photoUrl: photoUrl,
         serialno: serial,
-        species: row.Name || "",
+        species: row.Description || "",
         length: "",
         width: "",
         owner: row.Owner || "",
@@ -104,7 +104,7 @@ export default async function handler(req, res) {
       } else {
         missing.push({
           serialno: serial,
-          species: row.Name || "—",
+          species: row.Description || "—",
           owner: row.Owner || "—",
           location: row.Location || "—"
         });

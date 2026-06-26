@@ -51,7 +51,7 @@ export default function LumberGallery() {
       <div style={{ marginBottom: '1.5rem' }}>
         <input
           type="text"
-          placeholder="Search by serial number or species…"
+          placeholder="Search by serial number or description…"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           style={{ width: '100%', marginBottom: '1rem' }}
@@ -213,7 +213,7 @@ export default function LumberGallery() {
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', fontSize: '14px' }}>
                 <div>
-                  <label style={{ color: 'var(--color-text-secondary)', fontSize: '12px', display: 'block', marginBottom: '4px' }}>Species</label>
+                  <label style={{ color: 'var(--color-text-secondary)', fontSize: '12px', display: 'block', marginBottom: '4px' }}>Description</label>
                   <p style={{ margin: 0, color: 'var(--color-text-primary)' }}>{selectedPiece.species || '—'}</p>
                 </div>
                 <div>
