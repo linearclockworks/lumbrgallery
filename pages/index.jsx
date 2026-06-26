@@ -10,6 +10,8 @@ export default function LumberGallery() {
   const [filterOwner, setFilterOwner] = useState('');
   const [filterLocation, setFilterLocation] = useState('');
   const [selectedPiece, setSelectedPiece] = useState(null);
+  const [favorites, setFavorites] = useState(new Set());
+  const [showOnlyFavorites, setShowOnlyFavorites] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -32,14 +34,25 @@ export default function LumberGallery() {
   const uniqueOwners = [...new Set(pieces.map(p => p.owner).filter(Boolean))];
   const uniqueLocations = [...new Set(pieces.map(p => p.location).filter(Boolean))];
 
-  const filtered = pieces.filter(piece => {
+  const toggleFavorite = (serialno) => {
+    const newFavorites = new Set(favorites);
+    if (newFavorites.has(serialno)) {
+      newFavorites.delete(serialno);
+    } else {
+      newFavorites.add(serialno);
+    }
+    setFavorites(newFavorites);
+  };
+
+  let filtered = pieces.filter(piece => {
     const matchesSearch = 
       piece.serialno.toLowerCase().includes(searchTerm.toLowerCase()) ||
       piece.species.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesSpecies = !filterSpecies || piece.species === filterSpecies;
     const matchesOwner = !filterOwner || piece.owner === filterOwner;
     const matchesLocation = !filterLocation || piece.location === filterLocation;
-    return matchesSearch && matchesSpecies && matchesOwner && matchesLocation;
+    const matchesFavorite = !showOnlyFavorites || favorites.has(piece.serialno);
+    return matchesSearch && matchesSpecies && matchesOwner && matchesLocation && matchesFavorite;
   });
 
   return (
@@ -57,7 +70,7 @@ export default function LumberGallery() {
           style={{ width: '100%', marginBottom: '1rem' }}
         />
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px', marginBottom: '1rem' }}>
           <select value={filterSpecies} onChange={(e) => setFilterSpecies(e.target.value)}>
             <option value="">All species</option>
             {uniqueSpecies.map(s => <option key={s} value={s}>{s}</option>)}
@@ -72,6 +85,32 @@ export default function LumberGallery() {
             <option value="">All locations</option>
             {uniqueLocations.map(l => <option key={l} value={l}>{l}</option>)}
           </select>
+        </div>
+
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '14px' }}>
+            <input
+              type="checkbox"
+              checked={showOnlyFavorites}
+              onChange={(e) => setShowOnlyFavorites(e.target.checked)}
+            />
+            Show favorites only ({favorites.size})
+          </label>
+          {favorites.size > 0 && (
+            <button
+              onClick={() => setFavorites(new Set())}
+              style={{
+                padding: '6px 12px',
+                fontSize: '12px',
+                background: 'var(--color-background-secondary)',
+                border: '0.5px solid var(--color-border-tertiary)',
+                borderRadius: 'var(--border-radius-lg)',
+                cursor: 'pointer'
+              }}
+            >
+              Clear all favorites
+            </button>
+          )}
         </div>
       </div>
 
@@ -88,13 +127,11 @@ export default function LumberGallery() {
             {filtered.map(piece => (
               <div
                 key={piece.fileId}
-                onClick={() => setSelectedPiece(piece)}
                 style={{
                   background: 'var(--color-background-primary)',
                   border: '0.5px solid var(--color-border-tertiary)',
                   borderRadius: 'var(--border-radius-lg)',
                   overflow: 'hidden',
-                  cursor: 'pointer',
                   transition: 'all 0.2s'
                 }}
                 onMouseEnter={(e) => {
@@ -106,12 +143,35 @@ export default function LumberGallery() {
                   e.currentTarget.style.boxShadow = 'none';
                 }}
               >
-                <div style={{ aspect: '1', overflow: 'hidden', background: 'var(--color-background-secondary)' }}>
+                <div style={{ position: 'relative', aspect: '1', overflow: 'hidden', background: 'var(--color-background-secondary)' }}>
                   <img
                     src={piece.photoUrl}
                     alt={`${piece.species} ${piece.serialno}`}
-                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover', cursor: 'pointer' }}
+                    onClick={() => setSelectedPiece(piece)}
                   />
+                  <button
+                    onClick={() => toggleFavorite(piece.serialno)}
+                    style={{
+                      position: 'absolute',
+                      top: '8px',
+                      right: '8px',
+                      background: 'rgba(0,0,0,0.6)',
+                      border: 'none',
+                      color: favorites.has(piece.serialno) ? '#ff6b6b' : 'white',
+                      width: '36px',
+                      height: '36px',
+                      borderRadius: '50%',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '18px',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    {favorites.has(piece.serialno) ? '♥' : '♡'}
+                  </button>
                 </div>
                 <div style={{ padding: '12px' }}>
                   <p style={{ fontSize: '13px', fontWeight: 500, margin: '0 0 4px 0', color: 'var(--color-text-primary)' }}>
