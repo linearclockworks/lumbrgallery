@@ -84,7 +84,7 @@ export default function LumberGallery() {
             {filtered.length} piece{filtered.length !== 1 ? 's' : ''} found
           </p>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(1200px, 1fr))', gap: '12px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))', gap: '12px' }}>
             {filtered.map(piece => (
               <div
                 key={piece.fileId}
@@ -117,9 +117,19 @@ export default function LumberGallery() {
                   <p style={{ fontSize: '13px', fontWeight: 500, margin: '0 0 4px 0', color: 'var(--color-text-primary)' }}>
                     {piece.serialno}
                   </p>
-                  <p style={{ fontSize: '12px', color: 'var(--color-text-secondary)', margin: 0 }}>
+                  <p style={{ fontSize: '12px', color: 'var(--color-text-secondary)', margin: '0 0 8px 0' }}>
                     {piece.species || '—'}
                   </p>
+                  <p style={{ fontSize: '11px', color: 'var(--color-text-secondary)', margin: 0 }}>
+                    {piece.owner && <span>{piece.owner}</span>}
+                    {piece.owner && piece.location && <span> • </span>}
+                    {piece.location && <span>{piece.location}</span>}
+                  </p>
+                  {piece.comments && (
+                    <p style={{ fontSize: '11px', color: 'var(--color-text-secondary)', margin: '4px 0 0 0' }}>
+                      {piece.comments}
+                    </p>
+                  )}
                 </div>
               </div>
             ))}
