@@ -47,10 +47,12 @@ async function getPhotoIds() {
   const drive = google.drive({ version: 'v3', auth });
   
   const res = await drive.files.list({
-    q: `'${FOLDER_ID}' in parents and trashed=false`,
+    q: `'${FOLDER_ID}' in parents and mimeType='image/jpeg' and trashed=false`,
     spaces: 'drive',
     fields: 'files(id, name)',
-    pageSize: 200
+    pageSize: 200,
+    supportsAllDrives: true,
+    includeItemsFromAllDrives: true
   });
   
   const photoMap = {};
@@ -75,10 +77,12 @@ export default async function handler(req, res) {
         if (!serial) return null;
         
         const photoId = photoIds[serial];
+        const photoUrl = photoId ? `https://drive.google.com/uc?id=${photoId}` : null;
+        
         return {
           filename: `${serial}.jpeg`,
           fileId: serial,
-          photoUrl: photoId ? `https://drive.google.com/uc?id=${photoId}` : null,
+          photoUrl: photoUrl,
           serialno: serial,
           species: row.Name || "",
           length: "",
