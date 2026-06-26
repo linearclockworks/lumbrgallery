@@ -49,7 +49,7 @@ async function getPhotoUrls() {
   const res = await drive.files.list({
     q: `'${FOLDER_ID}' in parents and mimeType='image/jpeg' and trashed=false`,
     spaces: 'drive',
-    fields: 'files(id, name, webViewLink)',
+    fields: 'files(id, name, webContentLink)',  // <-- Use webContentLink
     pageSize: 200,
     supportsAllDrives: true,
     includeItemsFromAllDrives: true
@@ -58,8 +58,7 @@ async function getPhotoUrls() {
   const photoMap = {};
   for (const file of res.data.files || []) {
     const serial = file.name.split('.').slice(0, -1).join('.');
-    const previewUrl = file.webViewLink.replace('/view', '/preview');
-    photoMap[serial] = previewUrl;
+    photoMap[serial] = file.webContentLink;  // Direct download link
   }
   
   return photoMap;
