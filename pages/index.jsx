@@ -84,7 +84,7 @@ export default function LumberGallery() {
             {filtered.length} piece{filtered.length !== 1 ? 's' : ''} found
           </p>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '12px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))', gap: '12px' }}>
             {filtered.map(piece => (
               <div
                 key={piece.fileId}
