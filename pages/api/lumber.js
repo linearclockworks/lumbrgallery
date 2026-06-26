@@ -42,14 +42,14 @@ async function getSheetData() {
   return data;
 }
 
-async function getPhotoIds() {
+async function getPhotoUrls() {
   const auth = await getAuth();
   const drive = google.drive({ version: 'v3', auth });
   
   const res = await drive.files.list({
     q: `'${FOLDER_ID}' in parents and mimeType='image/jpeg' and trashed=false`,
     spaces: 'drive',
-    fields: 'files(id, name)',
+    fields: 'files(id, name, webViewLink)',
     pageSize: 200,
     supportsAllDrives: true,
     includeItemsFromAllDrives: true
@@ -58,7 +58,8 @@ async function getPhotoIds() {
   const photoMap = {};
   for (const file of res.data.files || []) {
     const serial = file.name.split('.').slice(0, -1).join('.');
-    photoMap[serial] = file.id;
+    const previewUrl = file.webViewLink.replace('/view', '/preview');
+    photoMap[serial] = previewUrl;
   }
   
   return photoMap;
@@ -66,9 +67,9 @@ async function getPhotoIds() {
 
 export default async function handler(req, res) {
   try {
-    const [sheetData, photoIds] = await Promise.all([
+    const [sheetData, photoUrls] = await Promise.all([
       getSheetData(),
-      getPhotoIds()
+      getPhotoUrls()
     ]);
     
     const pieces = sheetData
@@ -76,13 +77,10 @@ export default async function handler(req, res) {
         const serial = String(row.Serial || '').trim();
         if (!serial) return null;
         
-        const photoId = photoIds[serial];
-        const photoUrl = photoId ? `https://drive.google.com/uc?id=${photoId}` : null;
-        
         return {
           filename: `${serial}.jpeg`,
           fileId: serial,
-          photoUrl: photoUrl,
+          photoUrl: photoUrls[serial] || null,
           serialno: serial,
           species: row.Name || "",
           length: "",
