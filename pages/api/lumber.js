@@ -61,6 +61,9 @@ async function getPhotoIds() {
     photoMap[serial] = file.id;
   }
   
+  console.log('Found photo IDs:', Object.keys(photoMap).length);  // Debug log
+  console.log('Photo map:', photoMap);  // Debug log
+  
   return photoMap;
 }
 
