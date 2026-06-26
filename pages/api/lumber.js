@@ -42,14 +42,14 @@ async function getSheetData() {
   return data;
 }
 
-async function getPhotoUrls() {
+async function getPhotoIds() {
   const auth = await getAuth();
   const drive = google.drive({ version: 'v3', auth });
   
   const res = await drive.files.list({
     q: `'${FOLDER_ID}' in parents and mimeType='image/jpeg' and trashed=false`,
     spaces: 'drive',
-    fields: 'files(id, name, webContentLink)',  // <-- Use webContentLink
+    fields: 'files(id, name)',
     pageSize: 200,
     supportsAllDrives: true,
     includeItemsFromAllDrives: true
@@ -58,7 +58,7 @@ async function getPhotoUrls() {
   const photoMap = {};
   for (const file of res.data.files || []) {
     const serial = file.name.split('.').slice(0, -1).join('.');
-    photoMap[serial] = file.webContentLink;  // Direct download link
+    photoMap[serial] = file.id;
   }
   
   return photoMap;
@@ -66,9 +66,9 @@ async function getPhotoUrls() {
 
 export default async function handler(req, res) {
   try {
-    const [sheetData, photoUrls] = await Promise.all([
+    const [sheetData, photoIds] = await Promise.all([
       getSheetData(),
-      getPhotoUrls()
+      getPhotoIds()
     ]);
     
     const pieces = sheetData
@@ -76,10 +76,14 @@ export default async function handler(req, res) {
         const serial = String(row.Serial || '').trim();
         if (!serial) return null;
         
+        const fileId = photoIds[serial];
+        // Use Google's CDN endpoint for public image delivery
+        const photoUrl = fileId ? `https://lh3.googleusercontent.com/d/${fileId}=w1000` : null;
+        
         return {
           filename: `${serial}.jpeg`,
           fileId: serial,
-          photoUrl: photoUrls[serial] || null,
+          photoUrl: photoUrl,
           serialno: serial,
           species: row.Name || "",
           length: "",
