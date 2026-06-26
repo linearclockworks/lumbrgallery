@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 
 export default function LumberGallery() {
   const [pieces, setPieces] = useState([]);
+  const [missing, setMissing] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -17,6 +18,7 @@ export default function LumberGallery() {
         if (!response.ok) throw new Error('Failed to fetch lumber data');
         const data = await response.json();
         setPieces(data.pieces || []);
+        setMissing(data.missing || []);
       } catch (err) {
         setError(err.message);
       } finally {
@@ -125,8 +127,26 @@ export default function LumberGallery() {
         </div>
       )}
 
-      {!loading && !error && filtered.length === 0 && (
+      {!loading && !error && filtered.length === 0 && pieces.length > 0 && (
         <p style={{ color: 'var(--color-text-secondary)' }}>No matches found.</p>
+      )}
+
+      {!loading && !error && missing.length > 0 && (
+        <div style={{ marginTop: '3rem', padding: '1.5rem', background: 'var(--color-background-secondary)', borderRadius: 'var(--border-radius-lg)' }}>
+          <h2 style={{ fontSize: '16px', fontWeight: 500, marginBottom: '1rem', color: 'var(--color-text-primary)' }}>
+            Missing Photos ({missing.length})
+          </h2>
+          <div style={{ fontSize: '13px', color: 'var(--color-text-secondary)' }}>
+            {missing.map(m => (
+              <div key={m.serialno} style={{ padding: '8px 0', borderBottom: '0.5px solid var(--color-border-tertiary)' }}>
+                <span style={{ fontWeight: 500, color: 'var(--color-text-primary)' }}>{m.serialno}</span>
+                {m.species && m.species !== '—' && <span> • {m.species}</span>}
+                {m.owner && m.owner !== '—' && <span> • {m.owner}</span>}
+                {m.location && m.location !== '—' && <span> • {m.location}</span>}
+              </div>
+            ))}
+          </div>
+        </div>
       )}
 
       {selectedPiece && (

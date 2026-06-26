@@ -61,9 +61,6 @@ async function getPhotoIds() {
     photoMap[serial] = file.id;
   }
   
-  console.log('Found photo IDs:', Object.keys(photoMap).length);  // Debug log
-  console.log('Photo map:', photoMap);  // Debug log
-  
   return photoMap;
 }
 
@@ -74,31 +71,47 @@ export default async function handler(req, res) {
       getPhotoIds()
     ]);
     
-    const pieces = sheetData
-      .map(row => {
-        const serial = String(row.Serial || '').trim();
-        if (!serial) return null;
-        
-        const fileId = photoIds[serial];
-        // Use Google's CDN endpoint for public image delivery
-        const photoUrl = fileId ? `https://lh3.googleusercontent.com/d/${fileId}=w1000` : null;
-        
-        return {
-          filename: `${serial}.jpeg`,
-          fileId: serial,
-          photoUrl: photoUrl,
-          serialno: serial,
-          species: row.Name || "",
-          length: "",
-          width: "",
-          owner: row.Owner || "",
-          location: row.Location || "",
-          comments: row.Comments || ""
-        };
-      })
-      .filter(Boolean);
+    const pieces = [];
+    const missing = [];
     
-    res.status(200).json({ pieces });
+    for (const row of sheetData) {
+      const serial = String(row.Serial || '').trim();
+      if (!serial) continue;
+      
+      // Skip if Available = "No"
+      if (row.Available && String(row.Available).toLowerCase() === 'no') {
+        continue;
+      }
+      
+      const fileId = photoIds[serial];
+      const photoUrl = fileId ? `https://lh3.googleusercontent.com/d/${fileId}=w1000` : null;
+      
+      const piece = {
+        filename: `${serial}.jpeg`,
+        fileId: serial,
+        photoUrl: photoUrl,
+        serialno: serial,
+        species: row.Name || "",
+        length: "",
+        width: "",
+        owner: row.Owner || "",
+        location: row.Location || "",
+        comments: row.Comments || ""
+      };
+      
+      if (photoUrl) {
+        pieces.push(piece);
+      } else {
+        missing.push({
+          serialno: serial,
+          species: row.Name || "—",
+          owner: row.Owner || "—",
+          location: row.Location || "—"
+        });
+      }
+    }
+    
+    res.status(200).json({ pieces, missing });
   } catch (err) {
     console.error('Error:', err);
     res.status(500).json({ error: err.message });
