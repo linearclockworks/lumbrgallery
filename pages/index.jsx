@@ -13,6 +13,14 @@ export default function LumberGallery() {
   const [favorites, setFavorites] = useState(new Set());
   const [showOnlyFavorites, setShowOnlyFavorites] = useState(false);
 
+  // Layout overlay engine states
+  const [enableOverlay, setEnableOverlay] = useState(false);
+  const [overlayTemplate, setOverlayType] = useState('3ft'); // '3ft' or '5ft'
+  const [overlayScale, setOverlayScale] = useState(1.0);
+  const [overlayRotation, setOverlayRotation] = useState(0);
+  const [overlayX, setOverlayX] = useState(50);
+  const [overlayY, setOverlayY] = useState(50);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -29,6 +37,15 @@ export default function LumberGallery() {
     };
     fetchData();
   }, []);
+
+  // Reset overlay settings whenever a new piece is selected
+  useEffect(() => {
+    setEnableOverlay(false);
+    setOverlayScale(1.0);
+    setOverlayRotation(0);
+    setOverlayX(50);
+    setOverlayY(50);
+  }, [selectedPiece]);
 
   const uniqueSpecies = [...new Set(pieces.map(p => p.species).filter(Boolean))];
   const uniqueOwners = [...new Set(pieces.map(p => p.owner).filter(Boolean))];
@@ -123,7 +140,7 @@ export default function LumberGallery() {
             {filtered.length} piece{filtered.length !== 1 ? 's' : ''} found
           </p>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(1200px, 1fr))', gap: '12px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '12px' }}>
             {filtered.map(piece => (
               <div
                 key={piece.fileId}
@@ -143,7 +160,7 @@ export default function LumberGallery() {
                   e.currentTarget.style.boxShadow = 'none';
                 }}
               >
-                <div style={{ position: 'relative', aspect: '1', overflow: 'hidden', background: 'var(--color-background-secondary)' }}>
+                <div style={{ position: 'relative', aspectRatio: '1', overflow: 'hidden', background: 'var(--color-background-secondary)' }}>
                   <img
                     src={piece.photoUrl}
                     alt={`${piece.species} ${piece.serialno}`}
@@ -175,18 +192,21 @@ export default function LumberGallery() {
                 </div>
                 <div style={{ padding: '12px' }}>
                   <p style={{ fontSize: '13px', fontWeight: 500, margin: '0 0 4px 0', color: 'var(--color-text-primary)' }}>
-                    {piece.serialno}
+                    #{piece.serialno}
                   </p>
                   <p style={{ fontSize: '12px', color: 'var(--color-text-secondary)', margin: '0 0 8px 0' }}>
                     {piece.species || '—'}
                   </p>
-                  <p style={{ fontSize: '11px', color: 'var(--color-text-secondary)', margin: 0 }}>
-                    {piece.owner && <span>{piece.owner}</span>}
+                  
+                  {/* Updated with clear text prefixes to differentiate data attributes */}
+                  <p style={{ fontSize: '11px', color: 'var(--color-text-secondary)', margin: 0, lineHeight: '1.4' }}>
+                    {piece.owner && <span><strong>Owner:</strong> {piece.owner}</span>}
                     {piece.owner && piece.location && <span> • </span>}
-                    {piece.location && <span>{piece.location}</span>}
+                    {piece.location && <span><strong>Location:</strong> {piece.location}</span>}
                   </p>
+                  
                   {piece.comments && (
-                    <p style={{ fontSize: '11px', color: 'var(--color-text-secondary)', margin: '4px 0 0 0' }}>
+                    <p style={{ fontSize: '11px', color: 'var(--color-text-secondary)', margin: '4px 0 0 0', fontStyle: 'italic' }}>
                       {piece.comments}
                     </p>
                   )}
@@ -211,8 +231,8 @@ export default function LumberGallery() {
               <div key={m.serialno} style={{ padding: '8px 0', borderBottom: '0.5px solid var(--color-border-tertiary)' }}>
                 <span style={{ fontWeight: 500, color: 'var(--color-text-primary)' }}>{m.serialno}</span>
                 {m.species && m.species !== '—' && <span> • {m.species}</span>}
-                {m.owner && m.owner !== '—' && <span> • {m.owner}</span>}
-                {m.location && m.location !== '—' && <span> • {m.location}</span>}
+                {m.owner && m.owner !== '—' && <span> • Owner: {m.owner}</span>}
+                {m.location && m.location !== '—' && <span> • Loc: {m.location}</span>}
               </div>
             ))}
           </div>
@@ -227,12 +247,13 @@ export default function LumberGallery() {
             left: 0,
             right: 0,
             bottom: 0,
-            background: 'rgba(0,0,0,0.5)',
+            background: 'rgba(0,0,0,0.65)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             zIndex: 1000,
-            padding: '1rem'
+            padding: '1rem',
+            backdropFilter: 'blur(4px)'
           }}
           onClick={() => setSelectedPiece(null)}
         >
@@ -241,18 +262,48 @@ export default function LumberGallery() {
             style={{
               background: 'var(--color-background-primary)',
               borderRadius: 'var(--border-radius-lg)',
-              maxWidth: '600px',
+              maxWidth: '750px',
               width: '100%',
-              maxHeight: '90vh',
-              overflow: 'auto'
+              maxHeight: '95vh',
+              overflow: 'auto',
+              boxShadow: '0 20px 25px -5px rgba(0,0,0,0.15)'
             }}
           >
-            <div style={{ position: 'relative' }}>
+            {/* Interactive Workspace Area */}
+            <div style={{ position: 'relative', background: '#111', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
               <img
                 src={selectedPiece.photoUrl}
                 alt={selectedPiece.species}
-                style={{ width: '100%', display: 'block' }}
+                style={{ width: '100%', display: 'block', maxHeight: '55vh', objectFit: 'contain' }}
               />
+              
+              {/* Semi-transparent vector layer overlay */}
+              {enableOverlay && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: `${overlayY}%`,
+                    left: `${overlayX}%`,
+                    transform: `translate(-50%, -50%) scale(${overlayScale}) rotate(${overlayRotation}deg)`,
+                    pointerEvents: 'none',
+                    userSelect: 'none',
+                    whiteSpace: 'nowrap',
+                    color: 'rgba(0, 255, 242, 0.85)', // High contrast blueprint cyan outline
+                    fontFamily: overlayTemplate === '5ft' ? '"Courier New", Courier, monospace' : 'Georgia, serif',
+                    letterSpacing: '2px',
+                    fontSize: '20px',
+                    fontWeight: 'bold',
+                    border: '1.5px dashed rgba(0, 255, 242, 0.4)',
+                    padding: '6px 14px',
+                    backgroundColor: 'rgba(0, 30, 35, 0.45)',
+                    borderRadius: '4px',
+                    boxShadow: '0 0 10px rgba(0,255,242,0.2)'
+                  }}
+                >
+                  {overlayTemplate === '5ft' ? '5FT CNC: APPLE GOTHIC NEO' : '3FT CNC: DEVANGARI'}
+                </div>
+              )}
+              
               <button
                 onClick={() => setSelectedPiece(null)}
                 style={{
@@ -269,7 +320,8 @@ export default function LumberGallery() {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontSize: '20px'
+                  fontSize: '20px',
+                  zIndex: 10
                 }}
               >
                 ✕
@@ -277,9 +329,105 @@ export default function LumberGallery() {
             </div>
 
             <div style={{ padding: '1.5rem' }}>
-              <h2 style={{ fontSize: '18px', fontWeight: 500, marginBottom: '1rem', color: 'var(--color-text-primary)' }}>
-                {selectedPiece.serialno}
-              </h2>
+              <div style={{ display: 'flex', justifyContent: 'between', alignItems: 'center', marginBottom: '1.2rem', gap: '20px' }}>
+                <h2 style={{ fontSize: '18px', fontWeight: 500, margin: 0, color: 'var(--color-text-primary)', flexGrow: 1 }}>
+                  Piece #{selectedPiece.serialno}
+                </h2>
+                
+                {/* Overlay Activation Button */}
+                <button 
+                  onClick={() => setEnableOverlay(!enableOverlay)}
+                  style={{
+                    padding: '6px 14px',
+                    fontSize: '12px',
+                    fontWeight: 500,
+                    cursor: 'pointer',
+                    borderRadius: '6px',
+                    backgroundColor: enableOverlay ? 'rgba(0, 255, 242, 0.15)' : 'var(--color-background-secondary)',
+                    border: enableOverlay ? '1px solid rgba(0, 255, 242, 0.6)' : '1px solid var(--color-border-tertiary)',
+                    color: enableOverlay ? 'rgb(0, 200, 190)' : 'var(--color-text-primary)'
+                  }}
+                >
+                  {enableOverlay ? '✕ Disable Template Placement' : '📐 Blueprint Overlay'}
+                </button>
+              </div>
+
+              {/* Dynamic Scaling & Twisting Panel Control Section */}
+              {enableOverlay && (
+                <div style={{ 
+                  background: 'var(--color-background-secondary)', 
+                  padding: '12px 16px', 
+                  borderRadius: '8px', 
+                  marginBottom: '1.5rem',
+                  border: '1px solid var(--color-border-tertiary)'
+                }}>
+                  <div style={{ display: 'flex', gap: '16px', marginBottom: '12px' }}>
+                    <label style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+                      <input 
+                        type="radio" 
+                        name="tmpl" 
+                        checked={overlayTemplate === '3ft'} 
+                        onChange={() => setOverlayType('3ft')} 
+                      /> 3-Foot Devangari Layout
+                    </label>
+                    <label style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+                      <input 
+                        type="radio" 
+                        name="tmpl" 
+                        checked={overlayTemplate === '5ft'} 
+                        onChange={() => setOverlayType('5ft')} 
+                      /> 5-Foot Apple Gothic Layout
+                    </label>
+                  </div>
+                  
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 24px', fontSize: '12px' }}>
+                    <div>
+                      <label style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--color-text-secondary)' }}>
+                        <span>Scale Factor</span>
+                        <span>{overlayScale.toFixed(2)}x</span>
+                      </label>
+                      <input 
+                        type="range" min="0.2" max="4.0" step="0.05" value={overlayScale} 
+                        onChange={(e) => setOverlayScale(parseFloat(e.target.value))} 
+                        style={{ width: '100%', margin: '4px 0' }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--color-text-secondary)' }}>
+                        <span>Twist Rotation</span>
+                        <span>{overlayRotation}°</span>
+                      </label>
+                      <input 
+                        type="range" min="-180" max="180" step="1" value={overlayRotation} 
+                        onChange={(e) => setOverlayRotation(parseInt(e.target.value))} 
+                        style={{ width: '100%', margin: '4px 0' }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--color-text-secondary)' }}>
+                        <span>Horizontal Center (X)</span>
+                        <span>{overlayX}%</span>
+                      </label>
+                      <input 
+                        type="range" min="0" max="100" step="1" value={overlayX} 
+                        onChange={(e) => setOverlayX(parseInt(e.target.value))} 
+                        style={{ width: '100%', margin: '4px 0' }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--color-text-secondary)' }}>
+                        <span>Vertical Center (Y)</span>
+                        <span>{overlayY}%</span>
+                      </label>
+                      <input 
+                        type="range" min="0" max="100" step="1" value={overlayY} 
+                        onChange={(e) => setOverlayY(parseInt(e.target.value))} 
+                        style={{ width: '100%', margin: '4px 0' }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', fontSize: '14px' }}>
                 <div>
@@ -316,7 +464,8 @@ export default function LumberGallery() {
                 style={{
                   marginTop: '1.5rem',
                   width: '100%',
-                  padding: '0.5rem 1rem'
+                  padding: '0.5rem 1rem',
+                  cursor: 'pointer'
                 }}
               >
                 Close
