@@ -26,14 +26,20 @@ def get_photo_ids():
     creds = get_auth()
     drive = build('drive', 'v3', credentials=creds)
     
-    query = f"'{FOLDER_ID}' in parents and trashed=false"
-    results = drive.files().list(q=query, spaces='drive', fields='files(id, name)', pageSize=200).execute()
+    results = drive.files().list(
+        q=f"'{FOLDER_ID}' in parents and mimeType='image/jpeg' and trashed=false",
+        spaces='drive',
+        fields='files(id, name, webViewLink)',
+        pageSize=100,
+        supportsAllDrives=True,
+        includeItemsFromAllDrives=True
+    ).execute()
     
-    # Map serial -> photo ID
     photo_map = {}
     for file in results.get('files', []):
         serial = file['name'].rsplit('.', 1)[0]
-        photo_map[serial] = file['id']
+        web_link = file.get('webViewLink', '').replace('/view', '/preview')
+        photo_map[serial] = web_link
     
     return photo_map
 
@@ -54,14 +60,17 @@ def build_lumber_json():
             "width": "",
             "owner": row.get('Owner', ''),
             "location": row.get('Location', ''),
-            "comments": row.get('Comments', ''),
-            "photoId": photo_ids.get(serial, '')
+            "comments": row.get('Comments', '')
         }
     
     with open('lumber.json', 'w') as f:
         json.dump(lumber_data, f, indent=2)
     
+    with open('photo_ids.json', 'w') as f:
+        json.dump(photo_ids, f, indent=2)
+    
     print(f"✓ Created lumber.json with {len(lumber_data)} entries")
+    print(f"✓ Created photo_ids.json with {len(photo_ids)} photo IDs")
 
 if __name__ == '__main__':
     build_lumber_json()

@@ -160,13 +160,19 @@ export default function LumberGallery() {
                   e.currentTarget.style.boxShadow = 'none';
                 }}
               >
-                <div style={{ position: 'relative', aspectRatio: '1', overflow: 'hidden', background: 'var(--color-background-secondary)' }}>
-                  <img
-                    src={piece.photoUrl}
-                    alt={`${piece.species} ${piece.serialno}`}
-                    style={{ width: '100%', height: '100%', objectFit: 'cover', cursor: 'pointer' }}
-                    onClick={() => setSelectedPiece(piece)}
-                  />
+               <div style={{ position: 'relative', overflow: 'hidden', background: 'var(--color-background-secondary)' }}>
+                <img
+                  src={piece.photoUrl}
+                  alt={`${piece.species} ${piece.serialno}`}
+                  style={{ 
+                    width: '100%', 
+                    height: 'auto',        // Allows the height to scale naturally with the width
+                    objectFit: 'contain',  // Ensures the entire image is displayed without clipping
+                    display: 'block',
+                    cursor: 'pointer' 
+                  }}
+                  onClick={() => setSelectedPiece(piece)}
+                />
                   <button
                     onClick={() => toggleFavorite(piece.serialno)}
                     style={{
@@ -277,31 +283,28 @@ export default function LumberGallery() {
                 style={{ width: '100%', display: 'block', maxHeight: '55vh', objectFit: 'contain' }}
               />
               
-              {/* Semi-transparent vector layer overlay */}
+              {/* Semi-transparent CNC artwork blueprint layer overlay */}
               {enableOverlay && (
-                <div
+                <img
+                  src="/timeline-template.png"
+                  alt="CNC Timeline Blueprint Layout"
                   style={{
                     position: 'absolute',
                     top: `${overlayY}%`,
                     left: `${overlayX}%`,
+                    // Dynamically handles scaling and free rotation mapping
                     transform: `translate(-50%, -50%) scale(${overlayScale}) rotate(${overlayRotation}deg)`,
                     pointerEvents: 'none',
                     userSelect: 'none',
-                    whiteSpace: 'nowrap',
-                    color: 'rgba(0, 255, 242, 0.85)', // High contrast blueprint cyan outline
-                    fontFamily: overlayTemplate === '5ft' ? '"Courier New", Courier, monospace' : 'Georgia, serif',
-                    letterSpacing: '2px',
-                    fontSize: '20px',
-                    fontWeight: 'bold',
-                    border: '1.5px dashed rgba(0, 255, 242, 0.4)',
-                    padding: '6px 14px',
-                    backgroundColor: 'rgba(0, 30, 35, 0.45)',
-                    borderRadius: '4px',
-                    boxShadow: '0 0 10px rgba(0,255,242,0.2)'
+                    maxWidth: 'none',
+                    // Baseline sizing scale helper depending on whether 3ft or 5ft is selected
+                    width: overlayTemplate === '5ft' ? '95%' : '60%',
+                    // THE MAGIC: Drops out the white image background completely, leaving just the black lines on the wood
+                    mixBlendMode: 'multiply',
+                    opacity: 0.9,
+                    filter: 'drop-shadow(0px 2px 4px rgba(0,0,0,0.15))'
                   }}
-                >
-                  {overlayTemplate === '5ft' ? '5FT CNC: APPLE GOTHIC NEO' : '3FT CNC: DEVANGARI'}
-                </div>
+                />
               )}
               
               <button
@@ -380,7 +383,8 @@ export default function LumberGallery() {
                     </label>
                   </div>
                   
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 24px', fontSize: '12px' }}>
+                  // Find your grid wrapper right above the map function and ensure it allows wide rows:
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(1200px, 1fr))', gap: '12px' }}>
                     <div>
                       <label style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--color-text-secondary)' }}>
                         <span>Scale Factor</span>
