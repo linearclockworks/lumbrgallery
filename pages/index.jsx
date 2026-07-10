@@ -62,9 +62,12 @@ export default function LumberGallery() {
   };
 
   let filtered = pieces.filter(piece => {
+    // UPDATED: Now matches against serial number, species description, OR comments
     const matchesSearch = 
       piece.serialno.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      piece.species.toLowerCase().includes(searchTerm.toLowerCase());
+      piece.species.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      piece.comments.toLowerCase().includes(searchTerm.toLowerCase());
+      
     const matchesSpecies = !filterSpecies || piece.species === filterSpecies;
     const matchesOwner = !filterOwner || piece.owner === filterOwner;
     const matchesLocation = !filterLocation || piece.location === filterLocation;
@@ -81,7 +84,7 @@ export default function LumberGallery() {
       <div style={{ marginBottom: '1.5rem' }}>
         <input
           type="text"
-          placeholder="Search by serial number or description…"
+          placeholder="Search by serial number, description, or comments…"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           style={{ width: '100%', marginBottom: '1rem' }}
@@ -166,8 +169,8 @@ export default function LumberGallery() {
                   alt={`${piece.species} ${piece.serialno}`}
                   style={{ 
                     width: '100%', 
-                    height: 'auto',        // Allows the height to scale naturally with the width
-                    objectFit: 'contain',  // Ensures the entire image is displayed without clipping
+                    height: 'auto',
+                    objectFit: 'contain',
                     display: 'block',
                     cursor: 'pointer' 
                   }}
@@ -204,7 +207,6 @@ export default function LumberGallery() {
                     {piece.species || '—'}
                   </p>
                   
-                  {/* Updated with clear text prefixes to differentiate data attributes */}
                   <p style={{ fontSize: '11px', color: 'var(--color-text-secondary)', margin: 0, lineHeight: '1.4' }}>
                     {piece.owner && <span><strong>Owner:</strong> {piece.owner}</span>}
                     {piece.owner && piece.location && <span> • </span>}
@@ -292,14 +294,11 @@ export default function LumberGallery() {
                     position: 'absolute',
                     top: `${overlayY}%`,
                     left: `${overlayX}%`,
-                    // Dynamically handles scaling and free rotation mapping
                     transform: `translate(-50%, -50%) scale(${overlayScale}) rotate(${overlayRotation}deg)`,
                     pointerEvents: 'none',
                     userSelect: 'none',
                     maxWidth: 'none',
-                    // Baseline sizing scale helper depending on whether 3ft or 5ft is selected
                     width: overlayTemplate === '5ft' ? '95%' : '60%',
-                    // THE MAGIC: Drops out the white image background completely, leaving just the black lines on the wood
                     mixBlendMode: 'multiply',
                     opacity: 0.9,
                     filter: 'drop-shadow(0px 2px 4px rgba(0,0,0,0.15))'
@@ -337,7 +336,6 @@ export default function LumberGallery() {
                   Piece #{selectedPiece.serialno}
                 </h2>
                 
-                {/* Overlay Activation Button */}
                 <button 
                   onClick={() => setEnableOverlay(!enableOverlay)}
                   style={{
@@ -355,7 +353,6 @@ export default function LumberGallery() {
                 </button>
               </div>
 
-              {/* Dynamic Scaling & Twisting Panel Control Section */}
               {enableOverlay && (
                 <div style={{ 
                   background: 'var(--color-background-secondary)', 
@@ -383,8 +380,7 @@ export default function LumberGallery() {
                     </label>
                   </div>
                   
-                  // Find your grid wrapper right above the map function and ensure it allows wide rows:
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(1200px, 1fr))', gap: '12px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 24px', fontSize: '12px' }}>
                     <div>
                       <label style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--color-text-secondary)' }}>
                         <span>Scale Factor</span>
