@@ -78,8 +78,9 @@ export default async function handler(req, res) {
       const serial = String(row.Serial || '').trim();
       if (!serial) continue;
       
-      // Skip if Available = "No"
-      if (row.Available && String(row.Available).toLowerCase() === 'no') {
+      // STRICT FILTER: Skip the piece if the Available column is NOT explicitly "Y" or "y"
+      const isAvailable = String(row.Available || '').trim().toLowerCase();
+      if (isAvailable !== 'y') {
         continue;
       }
       
