@@ -78,14 +78,16 @@ export default async function handler(req, res) {
       const serial = String(row.Serial || '').trim();
       if (!serial) continue;
       
-      // STRICT FILTER: Skip the piece if the Available column is NOT explicitly "Y" or "y"
+      // 1. STRICT AVAILABILITY FILTER (Applied first)
+      // If a row is NOT explicitly marked 'Y' or 'y', skip it entirely.
       const isAvailable = String(row.Available || '').trim().toLowerCase();
       if (isAvailable !== 'y') {
-        continue;
+        continue; 
       }
       
+      // 2. PHOTO CHECK (Only happens if the board is confirmed available)
       const fileId = photoIds[serial];
-      const photoUrl = fileId ? `https://lh3.googleusercontent.com/d/${fileId}=w1000` : null;
+      const photoUrl = fileId ? `https://lh3.googleusercontent.com/d/${fileId}=w1200` : null;
       
       const piece = {
         filename: `${serial}.jpeg`,
