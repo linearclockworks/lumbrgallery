@@ -47,17 +47,18 @@ async function getPhotoIds() {
   const drive = google.drive({ version: 'v3', auth });
   
   const res = await drive.files.list({
-    q: `'${FOLDER_ID}' in parents and mimeType='image/jpeg' and trashed=false`,
+    // Accepts JPEG, PNG, WebP, and any other image format
+    q: `'${FOLDER_ID}' in parents and mimeType contains 'image/' and trashed=false`,
     spaces: 'drive',
     fields: 'files(id, name)',
-    pageSize: 200,
+    pageSize: 1000,
     supportsAllDrives: true,
     includeItemsFromAllDrives: true
   });
   
   const photoMap = {};
   for (const file of res.data.files || []) {
-    const serial = file.name.split('.').slice(0, -1).join('.');
+    const serial = file.name.split('.').slice(0, -1).join('.').trim().toLowerCase();
     photoMap[serial] = file.id;
   }
   
@@ -78,15 +79,13 @@ export default async function handler(req, res) {
       const serial = String(row.Serial || '').trim();
       if (!serial) continue;
       
-      // 1. STRICT AVAILABILITY FILTER (Applied first)
-      // If a row is NOT explicitly marked 'Y' or 'y', skip it entirely.
+      // Only include boards marked 'Y' or 'y' under Available
       const isAvailable = String(row.Available || '').trim().toLowerCase();
       if (isAvailable !== 'y') {
-        continue; 
+        continue;
       }
       
-      // 2. PHOTO CHECK (Only happens if the board is confirmed available)
-      const fileId = photoIds[serial];
+      const fileId = photoIds[serial.toLowerCase()];
       const photoUrl = fileId ? `https://lh3.googleusercontent.com/d/${fileId}=w1200` : null;
       
       const piece = {
