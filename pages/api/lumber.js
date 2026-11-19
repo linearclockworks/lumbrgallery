@@ -79,11 +79,8 @@ export default async function handler(req, res) {
       const serial = String(row.Serial || '').trim();
       if (!serial) continue;
       
-      // Only include boards marked 'Y' or 'y' under Available
-      const isAvailable = String(row.Available || '').trim().toLowerCase();
-      if (isAvailable !== 'y') {
-        continue;
-      }
+      const availRaw = String(row.Available || '').trim().toLowerCase();
+      const available = availRaw === 'y';
       
       const fileId = photoIds[serial.toLowerCase()];
       const photoUrl = fileId ? `https://lh3.googleusercontent.com/d/${fileId}=w1200` : null;
@@ -98,12 +95,13 @@ export default async function handler(req, res) {
         width: "",
         owner: row.Owner || "",
         location: row.Location || "",
-        comments: row.Comments || ""
+        comments: row.Comments || "",
+        available: available
       };
       
       if (photoUrl) {
         pieces.push(piece);
-      } else {
+      } else if (available) {
         missing.push({
           serialno: serial,
           species: row.Description || "—",

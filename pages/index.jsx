@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 export default function LumberGallery() {
   const [pieces, setPieces] = useState([]);
@@ -12,6 +12,9 @@ export default function LumberGallery() {
   const [selectedPiece, setSelectedPiece] = useState(null);
   const [favorites, setFavorites] = useState(new Set());
   const [showOnlyFavorites, setShowOnlyFavorites] = useState(false);
+  const [showUnavailable, setShowUnavailable] = useState(false);
+  const [highlightedSerial, setHighlightedSerial] = useState('');
+  const scrolledHashRef = useRef('');
 
   // Layout overlay engine states
   const [enableOverlay, setEnableOverlay] = useState(false);
@@ -22,6 +25,11 @@ export default function LumberGallery() {
   const [overlayY, setOverlayY] = useState(50);
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('show_unavailable') === '1') {
+      setShowUnavailable(true);
+    }
+
     const fetchData = async () => {
       try {
         const response = await fetch('/api/lumber');
@@ -38,6 +46,44 @@ export default function LumberGallery() {
     fetchData();
   }, []);
 
+  // Automatically reveal unavailable boards & scroll to #board-<serial> (or #<serial>)
+  useEffect(() => {
+    if (loading || pieces.length === 0) return;
+
+    const handleHashNavigation = (forceScroll = false) => {
+      const rawHash = decodeURIComponent((window.location.hash || '').replace(/^#/, '')).trim();
+      if (!rawHash) return;
+
+      const targetSerial = rawHash.replace(/^board-/i, '');
+      const matchedPiece = pieces.find(
+        (p) => p.serialno.toLowerCase() === targetSerial.toLowerCase()
+      );
+
+      if (matchedPiece && matchedPiece.available === false && !showUnavailable) {
+        setShowUnavailable(true);
+        return; // Will re-run once showUnavailable renders the card
+      }
+
+      const el =
+        document.getElementById(`board-${targetSerial}`) ||
+        document.getElementById(targetSerial) ||
+        document.getElementById(rawHash);
+
+      if (el && (forceScroll || scrolledHashRef.current !== rawHash)) {
+        scrolledHashRef.current = rawHash;
+        setHighlightedSerial(targetSerial.toLowerCase());
+        requestAnimationFrame(() => {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+      }
+    };
+
+    handleHashNavigation(false);
+    const onHashChange = () => handleHashNavigation(true);
+    window.addEventListener('hashchange', onHashChange);
+    return () => window.removeEventListener('hashchange', onHashChange);
+  }, [loading, pieces, showUnavailable]);
+
   // Reset overlay settings whenever a new piece is selected
   useEffect(() => {
     setEnableOverlay(false);
@@ -47,9 +93,12 @@ export default function LumberGallery() {
     setOverlayY(50);
   }, [selectedPiece]);
 
-  const uniqueSpecies = [...new Set(pieces.map(p => p.species).filter(Boolean))];
-  const uniqueOwners = [...new Set(pieces.map(p => p.owner).filter(Boolean))];
-  const uniqueLocations = [...new Set(pieces.map(p => p.location).filter(Boolean))];
+  const unavailableCount = pieces.filter((p) => p.available === false).length;
+  const visiblePool = pieces.filter((p) => showUnavailable || p.available !== false);
+
+  const uniqueSpecies = [...new Set(visiblePool.map((p) => p.species).filter(Boolean))];
+  const uniqueOwners = [...new Set(visiblePool.map((p) => p.owner).filter(Boolean))];
+  const uniqueLocations = [...new Set(visiblePool.map((p) => p.location).filter(Boolean))];
 
   const toggleFavorite = (serialno) => {
     const newFavorites = new Set(favorites);
@@ -61,13 +110,12 @@ export default function LumberGallery() {
     setFavorites(newFavorites);
   };
 
-  let filtered = pieces.filter(piece => {
-    // UPDATED: Now matches against serial number, species description, OR comments
-    const matchesSearch = 
+  let filtered = visiblePool.filter((piece) => {
+    const matchesSearch =
       piece.serialno.toLowerCase().includes(searchTerm.toLowerCase()) ||
       piece.species.toLowerCase().includes(searchTerm.toLowerCase()) ||
       piece.comments.toLowerCase().includes(searchTerm.toLowerCase());
-      
+
     const matchesSpecies = !filterSpecies || piece.species === filterSpecies;
     const matchesOwner = !filterOwner || piece.owner === filterOwner;
     const matchesLocation = !filterLocation || piece.location === filterLocation;
@@ -93,21 +141,21 @@ export default function LumberGallery() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px', marginBottom: '1rem' }}>
           <select value={filterSpecies} onChange={(e) => setFilterSpecies(e.target.value)}>
             <option value="">All species</option>
-            {uniqueSpecies.map(s => <option key={s} value={s}>{s}</option>)}
+            {uniqueSpecies.map((s) => <option key={s} value={s}>{s}</option>)}
           </select>
 
           <select value={filterOwner} onChange={(e) => setFilterOwner(e.target.value)}>
             <option value="">All owners</option>
-            {uniqueOwners.map(o => <option key={o} value={o}>{o}</option>)}
+            {uniqueOwners.map((o) => <option key={o} value={o}>{o}</option>)}
           </select>
 
           <select value={filterLocation} onChange={(e) => setFilterLocation(e.target.value)}>
             <option value="">All locations</option>
-            {uniqueLocations.map(l => <option key={l} value={l}>{l}</option>)}
+            {uniqueLocations.map((l) => <option key={l} value={l}>{l}</option>)}
           </select>
         </div>
 
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', alignItems: 'center' }}>
           <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '14px' }}>
             <input
               type="checkbox"
@@ -116,6 +164,16 @@ export default function LumberGallery() {
             />
             Show favorites only ({favorites.size})
           </label>
+
+          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '14px' }}>
+            <input
+              type="checkbox"
+              checked={showUnavailable}
+              onChange={(e) => setShowUnavailable(e.target.checked)}
+            />
+            Show unavailable boards ({unavailableCount})
+          </label>
+
           {favorites.size > 0 && (
             <button
               onClick={() => setFavorites(new Set())}
@@ -144,88 +202,124 @@ export default function LumberGallery() {
           </p>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(1200px, 1fr))', gap: '12px' }}>
-            {filtered.map(piece => (
-              <div
-                key={piece.fileId}
-                style={{
-                  background: 'var(--color-background-primary)',
-                  border: '0.5px solid var(--color-border-tertiary)',
-                  borderRadius: 'var(--border-radius-lg)',
-                  overflow: 'hidden',
-                  transition: 'all 0.2s'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = 'var(--color-border-secondary)';
-                  e.currentTarget.style.boxShadow = '0 0 0 2px rgba(0,0,0,0.05)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = 'var(--color-border-tertiary)';
-                  e.currentTarget.style.boxShadow = 'none';
-                }}
-              >
-               <div style={{ position: 'relative', overflow: 'hidden', background: 'var(--color-background-secondary)' }}>
-                <img
-                  src={piece.photoUrl}
-                  alt={`${piece.species} ${piece.serialno}`}
-                  style={{ 
-                    width: '100%', 
-                    height: 'auto',
-                    objectFit: 'contain',
-                    display: 'block',
-                    cursor: 'pointer' 
+            {filtered.map((piece) => {
+              const isUnavailable = piece.available === false;
+              const isHighlighted = highlightedSerial === piece.serialno.toLowerCase();
+
+              return (
+                <div
+                  id={`board-${piece.serialno}`}
+                  key={piece.fileId}
+                  style={{
+                    background: 'var(--color-background-primary)',
+                    border: isHighlighted
+                      ? '2px solid #0b61d8'
+                      : '0.5px solid var(--color-border-tertiary)',
+                    borderRadius: 'var(--border-radius-lg)',
+                    overflow: 'hidden',
+                    transition: 'all 0.2s',
+                    scrollMarginTop: '24px',
+                    boxShadow: isHighlighted ? '0 0 0 3px rgba(11, 97, 216, 0.2)' : 'none'
                   }}
-                  onClick={() => setSelectedPiece(piece)}
-                />
-                  <button
-                    onClick={() => toggleFavorite(piece.serialno)}
-                    style={{
-                      position: 'absolute',
-                      top: '8px',
-                      right: '8px',
-                      background: 'rgba(0,0,0,0.6)',
-                      border: 'none',
-                      color: favorites.has(piece.serialno) ? '#ff6b6b' : 'white',
-                      width: '36px',
-                      height: '36px',
-                      borderRadius: '50%',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '18px',
-                      transition: 'all 0.2s'
-                    }}
-                  >
-                    {favorites.has(piece.serialno) ? '♥' : '♡'}
-                  </button>
-                </div>
-                <div style={{ padding: '12px' }}>
-                  <p style={{ fontSize: '13px', fontWeight: 500, margin: '0 0 4px 0', color: 'var(--color-text-primary)' }}>
-                    #{piece.serialno}
-                  </p>
-                  <p style={{ fontSize: '12px', color: 'var(--color-text-secondary)', margin: '0 0 8px 0' }}>
-                    {piece.species || '—'}
-                  </p>
-                  
-                  <p style={{ fontSize: '11px', color: 'var(--color-text-secondary)', margin: 0, lineHeight: '1.4' }}>
-                    {piece.owner && <span><strong>Owner:</strong> {piece.owner}</span>}
-                    {piece.owner && piece.location && <span> • </span>}
-                    {piece.location && <span><strong>Location:</strong> {piece.location}</span>}
-                  </p>
-                  
-                  {piece.comments && (
-                    <p style={{ fontSize: '11px', color: 'var(--color-text-secondary)', margin: '4px 0 0 0', fontStyle: 'italic' }}>
-                      {piece.comments}
-                    </p>
+                  onMouseEnter={(e) => {
+                    if (!isHighlighted) {
+                      e.currentTarget.style.borderColor = 'var(--color-border-secondary)';
+                      e.currentTarget.style.boxShadow = '0 0 0 2px rgba(0,0,0,0.05)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isHighlighted) {
+                      e.currentTarget.style.borderColor = 'var(--color-border-tertiary)';
+                      e.currentTarget.style.boxShadow = 'none';
+                    }
+                  }}
+                >
+                  <span id={piece.serialno} />
+                  <div style={{ position: 'relative', overflow: 'hidden', background: 'var(--color-background-secondary)' }}>
+                    <img
+                      src={piece.photoUrl}
+                      alt={`${piece.species} ${piece.serialno}`}
+                      style={{
+                        width: '100%',
+                        height: 'auto',
+                        objectFit: 'contain',
+                        display: 'block',
+                        cursor: 'pointer',
+                        opacity: isUnavailable ? 0.85 : 1
+                      }}
+                      onClick={() => setSelectedPiece(piece)}
+                    />
+                    <button
+                      onClick={() => toggleFavorite(piece.serialno)}
+                      style={{
+                        position: 'absolute',
+                        top: '8px',
+                        right: '8px',
+                        background: 'rgba(0,0,0,0.6)',
+                        border: 'none',
+                        color: favorites.has(piece.serialno) ? '#ff6b6b' : 'white',
+                        width: '36px',
+                        height: '36px',
+                        borderRadius: '50%',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '18px',
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      {favorites.has(piece.serialno) ? '♥' : '♡'}
+                    </button>
+                  </div>
+
+                  {isUnavailable && (
+                    <div
+                      style={{
+                        background: '#fee2e2',
+                        color: '#991b1b',
+                        borderTop: '1px solid #fca5a5',
+                        borderBottom: '1px solid #fca5a5',
+                        padding: '6px 12px',
+                        fontSize: '12px',
+                        fontWeight: 700,
+                        letterSpacing: '0.08em',
+                        textTransform: 'uppercase',
+                        textAlign: 'center'
+                      }}
+                    >
+                      Unavailable
+                    </div>
                   )}
+
+                  <div style={{ padding: '12px' }}>
+                    <p style={{ fontSize: '13px', fontWeight: 500, margin: '0 0 4px 0', color: 'var(--color-text-primary)' }}>
+                      #{piece.serialno}
+                    </p>
+                    <p style={{ fontSize: '12px', color: 'var(--color-text-secondary)', margin: '0 0 8px 0' }}>
+                      {piece.species || '—'}
+                    </p>
+
+                    <p style={{ fontSize: '11px', color: 'var(--color-text-secondary)', margin: 0, lineHeight: '1.4' }}>
+                      {piece.owner && <span><strong>Owner:</strong> {piece.owner}</span>}
+                      {piece.owner && piece.location && <span> • </span>}
+                      {piece.location && <span><strong>Location:</strong> {piece.location}</span>}
+                    </p>
+
+                    {piece.comments && (
+                      <p style={{ fontSize: '11px', color: 'var(--color-text-secondary)', margin: '4px 0 0 0', fontStyle: 'italic' }}>
+                        {piece.comments}
+                      </p>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
 
-      {!loading && !error && filtered.length === 0 && pieces.length > 0 && (
+      {!loading && !error && filtered.length === 0 && visiblePool.length > 0 && (
         <p style={{ color: 'var(--color-text-secondary)' }}>No matches found.</p>
       )}
 
@@ -235,7 +329,7 @@ export default function LumberGallery() {
             Missing Photos ({missing.length})
           </h2>
           <div style={{ fontSize: '13px', color: 'var(--color-text-secondary)' }}>
-            {missing.map(m => (
+            {missing.map((m) => (
               <div key={m.serialno} style={{ padding: '8px 0', borderBottom: '0.5px solid var(--color-border-tertiary)' }}>
                 <span style={{ fontWeight: 500, color: 'var(--color-text-primary)' }}>{m.serialno}</span>
                 {m.species && m.species !== '—' && <span> • {m.species}</span>}
@@ -330,8 +424,26 @@ export default function LumberGallery() {
               </button>
             </div>
 
+            {selectedPiece.available === false && (
+              <div
+                style={{
+                  background: '#fee2e2',
+                  color: '#991b1b',
+                  borderBottom: '1px solid #fca5a5',
+                  padding: '8px 14px',
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  letterSpacing: '0.08em',
+                  textTransform: 'uppercase',
+                  textAlign: 'center'
+                }}
+              >
+                Unavailable
+              </div>
+            )}
+
             <div style={{ padding: '1.5rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'between', alignItems: 'center', marginBottom: '1.2rem', gap: '20px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.2rem', gap: '20px' }}>
                 <h2 style={{ fontSize: '18px', fontWeight: 500, margin: 0, color: 'var(--color-text-primary)', flexGrow: 1 }}>
                   Piece #{selectedPiece.serialno}
                 </h2>
