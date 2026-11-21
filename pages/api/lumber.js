@@ -122,16 +122,24 @@ function extractPrimaryClockTitle(lineItemEdges) {
 }
 
 async function fetchShopifyOrderDetails(orderNumbers) {
-  const token = process.env.SHOPIFY_ACCESS_TOKEN;
+  const token = String(process.env.SHOPIFY_ACCESS_TOKEN || '').trim();
   const shopDomain = normalizeShopDomain(process.env.SHOPIFY_SHOP_NAME);
   const shopSlug = getShopSlug(shopDomain);
-  const apiVersion = process.env.SHOPIFY_API_VERSION || '2024-01';
+  const apiVersion = String(process.env.SHOPIFY_API_VERSION || '2024-01').trim();
 
   const uniqueNumbers = [...new Set(orderNumbers.map((n) => String(n).replace(/^#/, '').trim()).filter(Boolean))];
   const orderMap = {};
+  const debug = {
+    tokenConfigured: Boolean(token),
+    shopDomain,
+    requestedCount: uniqueNumbers.length,
+    matchedCount: 0,
+    error: null
+  };
 
   if (!token || uniqueNumbers.length === 0) {
-    return { orderMap, shopSlug };
+    if (!token) debug.error = 'SHOPIFY_ACCESS_TOKEN is not set in Vercel environment variables';
+    return { orderMap, shopSlug, debug };
   }
 
   const queryGql = `
@@ -142,9 +150,18 @@ async function fetchShopifyOrderDetails(orderNumbers) {
             legacyResourceId
             name
             createdAt
+            email
             customer {
+              displayName
               firstName
               lastName
+              email
+            }
+            shippingAddress {
+              name
+            }
+            billingAddress {
+              name
             }
             lineItems(first: 20) {
               edges {
@@ -167,7 +184,8 @@ async function fetchShopifyOrderDetails(orderNumbers) {
 
   for (let i = 0; i < uniqueNumbers.length; i += 40) {
     const chunk = uniqueNumbers.slice(i, i + 40);
-    const searchQuery = chunk.map((num) => `name:#${num}`).join(' OR ');
+    // status:any is required so fulfilled/closed orders are also returned
+    const searchQuery = `status:any (${chunk.map((num) => `name:${num}`).join(' OR ')})`;
 
     try {
       const resp = await fetch(`https://${shopDomain}/admin/api/${apiVersion}/graphql.json`, {
@@ -183,11 +201,18 @@ async function fetchShopifyOrderDetails(orderNumbers) {
       });
 
       if (!resp.ok) {
-        console.error(`Shopify API HTTP ${resp.status}`);
+        const errText = await resp.text();
+        debug.error = `HTTP ${resp.status}: ${errText.slice(0, 200)}`;
+        console.error('Shopify API error:', debug.error);
         continue;
       }
 
       const json = await resp.json();
+      if (json.errors) {
+        debug.error = JSON.stringify(json.errors);
+        console.error('Shopify GraphQL errors:', debug.error);
+      }
+
       const edges = json?.data?.orders?.edges || [];
 
       for (const edge of edges) {
@@ -197,7 +222,13 @@ async function fetchShopifyOrderDetails(orderNumbers) {
         const cleanOrderNum = String(node.name || '').replace(/^#/, '').trim();
         const first = String(node.customer?.firstName || '').trim();
         const last = String(node.customer?.lastName || '').trim();
-        const customerName = `${first} ${last}`.trim();
+        const customerName =
+          `${first} ${last}`.trim() ||
+          String(node.customer?.displayName || '').trim() ||
+          String(node.shippingAddress?.name || '').trim() ||
+          String(node.billingAddress?.name || '').trim() ||
+          String(node.customer?.email || node.email || '').trim();
+
         const clockName = extractPrimaryClockTitle(node.lineItems?.edges);
         const orderDate = formatOrderDate(node.createdAt);
         const legacyId = String(node.legacyResourceId || '').trim();
@@ -213,11 +244,13 @@ async function fetchShopifyOrderDetails(orderNumbers) {
         };
       }
     } catch (err) {
+      debug.error = err.message;
       console.error('Shopify lookup error:', err);
     }
   }
 
-  return { orderMap, shopSlug };
+  debug.matchedCount = Object.keys(orderMap).length;
+  return { orderMap, shopSlug, debug };
 }
 
 export default async function handler(req, res) {
@@ -235,7 +268,7 @@ export default async function handler(req, res) {
       }
     }
 
-    const { orderMap, shopSlug } = await fetchShopifyOrderDetails(orderNumbersToLookup);
+    const { orderMap, shopSlug, debug } = await fetchShopifyOrderDetails(orderNumbersToLookup);
 
     const pieces = [];
     const missing = [];
@@ -289,7 +322,7 @@ export default async function handler(req, res) {
       }
     }
 
-    res.status(200).json({ pieces, missing });
+    res.status(200).json({ pieces, missing, shopifyDebug: debug });
   } catch (err) {
     console.error('Error:', err);
     res.status(500).json({ error: err.message });
