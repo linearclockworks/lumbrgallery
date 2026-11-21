@@ -15,6 +15,18 @@ function getShopSlug(shopDomain) {
   return shopDomain.replace(/\.myshopify\.com$/i, '') || DEFAULT_SHOP_SLUG;
 }
 
+function formatOrderDate(isoString) {
+  if (!isoString) return '';
+  const d = new Date(isoString);
+  if (Number.isNaN(d.getTime())) return String(isoString);
+  return d.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    timeZone: 'America/New_York'
+  });
+}
+
 async function getAuth() {
   const credString = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
   if (!credString) throw new Error('GOOGLE_SERVICE_ACCOUNT_KEY not set');
@@ -129,6 +141,7 @@ async function fetchShopifyOrderDetails(orderNumbers) {
           node {
             legacyResourceId
             name
+            createdAt
             customer {
               firstName
               lastName
@@ -152,7 +165,6 @@ async function fetchShopifyOrderDetails(orderNumbers) {
     }
   `;
 
-  // Batch in chunks of 40 order numbers per GraphQL request
   for (let i = 0; i < uniqueNumbers.length; i += 40) {
     const chunk = uniqueNumbers.slice(i, i + 40);
     const searchQuery = chunk.map((num) => `name:#${num}`).join(' OR ');
@@ -187,6 +199,7 @@ async function fetchShopifyOrderDetails(orderNumbers) {
         const last = String(node.customer?.lastName || '').trim();
         const customerName = `${first} ${last}`.trim();
         const clockName = extractPrimaryClockTitle(node.lineItems?.edges);
+        const orderDate = formatOrderDate(node.createdAt);
         const legacyId = String(node.legacyResourceId || '').trim();
 
         orderMap[cleanOrderNum] = {
@@ -194,6 +207,7 @@ async function fetchShopifyOrderDetails(orderNumbers) {
           orderAdminUrl: legacyId
             ? `https://admin.shopify.com/store/${shopSlug}/orders/${legacyId}`
             : `https://admin.shopify.com/store/${shopSlug}/orders?query=${encodeURIComponent('#' + cleanOrderNum)}`,
+          orderDate,
           customerName,
           clockName
         };
@@ -258,6 +272,7 @@ export default async function handler(req, res) {
         available: available,
         orderNumber: orderNumber,
         orderAdminUrl: orderAdminUrl,
+        orderDate: shopifyOrder?.orderDate || '',
         customerName: shopifyOrder?.customerName || '',
         clockName: shopifyOrder?.clockName || ''
       };

@@ -117,6 +117,7 @@ export default function LumberGallery() {
       piece.species.toLowerCase().includes(q) ||
       piece.comments.toLowerCase().includes(q) ||
       (piece.orderNumber && piece.orderNumber.toLowerCase().includes(q)) ||
+      (piece.orderDate && piece.orderDate.toLowerCase().includes(q)) ||
       (piece.customerName && piece.customerName.toLowerCase().includes(q)) ||
       (piece.clockName && piece.clockName.toLowerCase().includes(q));
 
@@ -167,6 +168,13 @@ export default function LumberGallery() {
         </>
       )}
 
+      {piece.orderDate && (
+        <>
+          <span>•</span>
+          <span>{piece.orderDate}</span>
+        </>
+      )}
+
       {piece.customerName && (
         <>
           <span>•</span>
@@ -192,7 +200,7 @@ export default function LumberGallery() {
       <div style={{ marginBottom: '1.5rem' }}>
         <input
           type="text"
-          placeholder="Search by serial #, description, comments, order #, customer, or clock…"
+          placeholder="Search by serial #, description, comments, order #, date, customer, or product…"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           style={{ width: '100%', marginBottom: '1rem' }}
@@ -621,6 +629,7 @@ export default function LumberGallery() {
                       >
                         #{selectedPiece.orderNumber}
                       </a>
+                      {selectedPiece.orderDate ? ` (${selectedPiece.orderDate})` : ''}
                       {selectedPiece.customerName ? ` • ${selectedPiece.customerName}` : ''}
                     </p>
                   </div>
