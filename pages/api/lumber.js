@@ -3,6 +3,7 @@ import { google } from 'googleapis';
 const SHEET_ID = "1JP9F9BW9XmZEYjleWz3jh4xbZAhtnSry1lQLErEErNs";
 const FOLDER_ID = "1HZ5UYhlecNFZgn_ibUiOK7lzeuxc6t1o";
 const DEFAULT_SHOP_SLUG = "linear-clockworks";
+const PUBLIC_STOREFRONT_ORIGIN = "https://linearclockworks.com";
 
 function normalizeShopDomain(rawShop) {
   const s = String(rawShop || DEFAULT_SHOP_SLUG).trim();
@@ -102,9 +103,9 @@ function isClockItem(title, sku) {
   return s.startsWith('LCK-') || combined.includes('CLOCK');
 }
 
-function extractPrimaryClockTitle(lineItemEdges) {
+function extractPrimaryClockInfo(lineItemEdges, shopSlug) {
   const items = (lineItemEdges || []).map((e) => e?.node).filter(Boolean);
-  if (!items.length) return '';
+  if (!items.length) return { clockName: '', clockUrl: '' };
 
   // Exclude line items removed via order edits/swaps (currentQuantity === 0)
   const activeItems = items.filter((li) => {
@@ -124,14 +125,31 @@ function extractPrimaryClockTitle(lineItemEdges) {
   });
 
   const chosen = clockItem || pool[0];
-  if (!chosen) return '';
+  if (!chosen) return { clockName: '', clockUrl: '' };
 
   const baseTitle = String(chosen.title || '').trim();
   const variantTitle = String(chosen.variant?.title || '').trim();
-  if (variantTitle && variantTitle.toLowerCase() !== 'default title') {
-    return `${baseTitle} (${variantTitle})`;
+  const clockName =
+    variantTitle && variantTitle.toLowerCase() !== 'default title'
+      ? `${baseTitle} (${variantTitle})`
+      : baseTitle;
+
+  const product = chosen.product || chosen.variant?.product || {};
+  const onlineStoreUrl = String(product.onlineStoreUrl || '').trim();
+  const productStatus = String(product.status || '').trim().toUpperCase();
+  const productLegacyId = String(product.legacyResourceId || '').trim();
+  const sku = String(chosen.sku || chosen.variant?.sku || '').trim();
+
+  let clockUrl = '';
+  if (onlineStoreUrl && productStatus === 'ACTIVE') {
+    clockUrl = onlineStoreUrl.replace(/^https?:\/\/[^/]+\.myshopify\.com/i, PUBLIC_STOREFRONT_ORIGIN);
+  } else if (productLegacyId) {
+    clockUrl = `https://admin.shopify.com/store/${shopSlug}/products/${productLegacyId}`;
+  } else if (sku || baseTitle) {
+    clockUrl = `https://admin.shopify.com/store/${shopSlug}/products?query=${encodeURIComponent(sku || baseTitle)}`;
   }
-  return baseTitle;
+
+  return { clockName, clockUrl };
 }
 
 async function fetchShopifyOrderDetails(orderNumbers) {
@@ -185,9 +203,19 @@ async function fetchShopifyOrderDetails(orderNumbers) {
                   currentQuantity
                   unfulfilledQuantity
                   sku
+                  product {
+                    legacyResourceId
+                    status
+                    onlineStoreUrl
+                  }
                   variant {
                     title
                     sku
+                    product {
+                      legacyResourceId
+                      status
+                      onlineStoreUrl
+                    }
                   }
                 }
               }
@@ -250,7 +278,7 @@ async function fetchShopifyOrderDetails(orderNumbers) {
             String(node.billingAddress?.name || '').trim() ||
             String(node.customer?.email || node.email || '').trim();
 
-          const clockName = extractPrimaryClockTitle(node.lineItems?.edges);
+          const { clockName, clockUrl } = extractPrimaryClockInfo(node.lineItems?.edges, shopSlug);
           const orderDate = formatOrderDate(node.createdAt);
           const legacyId = String(node.legacyResourceId || '').trim();
 
@@ -261,7 +289,8 @@ async function fetchShopifyOrderDetails(orderNumbers) {
               : `https://admin.shopify.com/store/${shopSlug}/orders?query=${encodeURIComponent('#' + cleanOrderNum)}`,
             orderDate,
             customerName,
-            clockName
+            clockName,
+            clockUrl
           };
         }
       } catch (err) {
@@ -330,7 +359,8 @@ export default async function handler(req, res) {
         orderAdminUrl: orderAdminUrl,
         orderDate: shopifyOrder?.orderDate || '',
         customerName: shopifyOrder?.customerName || '',
-        clockName: shopifyOrder?.clockName || ''
+        clockName: shopifyOrder?.clockName || '',
+        clockUrl: shopifyOrder?.clockUrl || ''
       };
 
       if (photoUrl) {
