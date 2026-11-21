@@ -118,7 +118,15 @@ function extractPrimaryClockTitle(lineItemEdges) {
     return isClockItem(li.title, sku);
   });
 
-  return String((clockItem || pool[0])?.title || '').trim();
+  const chosen = clockItem || pool[0];
+  if (!chosen) return '';
+
+  const baseTitle = String(chosen.title || '').trim();
+  const variantTitle = String(chosen.variant?.title || '').trim();
+  if (variantTitle && variantTitle.toLowerCase() !== 'default title') {
+    return `${baseTitle} (${variantTitle})`;
+  }
+  return baseTitle;
 }
 
 async function fetchShopifyOrderDetails(orderNumbers) {
@@ -134,6 +142,7 @@ async function fetchShopifyOrderDetails(orderNumbers) {
     shopDomain,
     requestedCount: uniqueNumbers.length,
     matchedCount: 0,
+    unmatchedSample: [],
     error: null
   };
 
@@ -144,7 +153,7 @@ async function fetchShopifyOrderDetails(orderNumbers) {
 
   const queryGql = `
     query GetOrdersByName($q: String!) {
-      orders(first: 250, query: $q) {
+      orders(first: 50, query: $q) {
         edges {
           node {
             legacyResourceId
@@ -171,6 +180,7 @@ async function fetchShopifyOrderDetails(orderNumbers) {
                   unfulfilledQuantity
                   sku
                   variant {
+                    title
                     sku
                   }
                 }
@@ -182,74 +192,82 @@ async function fetchShopifyOrderDetails(orderNumbers) {
     }
   `;
 
-  for (let i = 0; i < uniqueNumbers.length; i += 40) {
-    const chunk = uniqueNumbers.slice(i, i + 40);
-    // status:any is required so fulfilled/closed orders are also returned
-    const searchQuery = `status:any (${chunk.map((num) => `name:${num}`).join(' OR ')})`;
-
-    try {
-      const resp = await fetch(`https://${shopDomain}/admin/api/${apiVersion}/graphql.json`, {
-        method: 'POST',
-        headers: {
-          'X-Shopify-Access-Token': token,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          query: queryGql,
-          variables: { q: searchQuery }
-        })
-      });
-
-      if (!resp.ok) {
-        const errText = await resp.text();
-        debug.error = `HTTP ${resp.status}: ${errText.slice(0, 200)}`;
-        console.error('Shopify API error:', debug.error);
-        continue;
-      }
-
-      const json = await resp.json();
-      if (json.errors) {
-        debug.error = JSON.stringify(json.errors);
-        console.error('Shopify GraphQL errors:', debug.error);
-      }
-
-      const edges = json?.data?.orders?.edges || [];
-
-      for (const edge of edges) {
-        const node = edge?.node;
-        if (!node) continue;
-
-        const cleanOrderNum = String(node.name || '').replace(/^#/, '').trim();
-        const first = String(node.customer?.firstName || '').trim();
-        const last = String(node.customer?.lastName || '').trim();
-        const customerName =
-          `${first} ${last}`.trim() ||
-          String(node.customer?.displayName || '').trim() ||
-          String(node.shippingAddress?.name || '').trim() ||
-          String(node.billingAddress?.name || '').trim() ||
-          String(node.customer?.email || node.email || '').trim();
-
-        const clockName = extractPrimaryClockTitle(node.lineItems?.edges);
-        const orderDate = formatOrderDate(node.createdAt);
-        const legacyId = String(node.legacyResourceId || '').trim();
-
-        orderMap[cleanOrderNum] = {
-          orderNumber: cleanOrderNum,
-          orderAdminUrl: legacyId
-            ? `https://admin.shopify.com/store/${shopSlug}/orders/${legacyId}`
-            : `https://admin.shopify.com/store/${shopSlug}/orders?query=${encodeURIComponent('#' + cleanOrderNum)}`,
-          orderDate,
-          customerName,
-          clockName
-        };
-      }
-    } catch (err) {
-      debug.error = err.message;
-      console.error('Shopify lookup error:', err);
-    }
+  // Batch in chunks of 10 so Shopify's search query parser never hits its OR-clause limit
+  const CHUNK_SIZE = 10;
+  const chunks = [];
+  for (let i = 0; i < uniqueNumbers.length; i += CHUNK_SIZE) {
+    chunks.push(uniqueNumbers.slice(i, i + CHUNK_SIZE));
   }
 
+  await Promise.all(
+    chunks.map(async (chunk) => {
+      const searchQuery = `status:any (${chunk.map((num) => `name:${num}`).join(' OR ')})`;
+
+      try {
+        const resp = await fetch(`https://${shopDomain}/admin/api/${apiVersion}/graphql.json`, {
+          method: 'POST',
+          headers: {
+            'X-Shopify-Access-Token': token,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            query: queryGql,
+            variables: { q: searchQuery }
+          })
+        });
+
+        if (!resp.ok) {
+          const errText = await resp.text();
+          debug.error = `HTTP ${resp.status}: ${errText.slice(0, 200)}`;
+          console.error('Shopify API error:', debug.error);
+          return;
+        }
+
+        const json = await resp.json();
+        if (json.errors) {
+          debug.error = JSON.stringify(json.errors);
+          console.error('Shopify GraphQL errors:', debug.error);
+        }
+
+        const edges = json?.data?.orders?.edges || [];
+
+        for (const edge of edges) {
+          const node = edge?.node;
+          if (!node) continue;
+
+          const cleanOrderNum = String(node.name || '').replace(/^#/, '').trim();
+          const first = String(node.customer?.firstName || '').trim();
+          const last = String(node.customer?.lastName || '').trim();
+          const customerName =
+            `${first} ${last}`.trim() ||
+            String(node.customer?.displayName || '').trim() ||
+            String(node.shippingAddress?.name || '').trim() ||
+            String(node.billingAddress?.name || '').trim() ||
+            String(node.customer?.email || node.email || '').trim();
+
+          const clockName = extractPrimaryClockTitle(node.lineItems?.edges);
+          const orderDate = formatOrderDate(node.createdAt);
+          const legacyId = String(node.legacyResourceId || '').trim();
+
+          orderMap[cleanOrderNum] = {
+            orderNumber: cleanOrderNum,
+            orderAdminUrl: legacyId
+              ? `https://admin.shopify.com/store/${shopSlug}/orders/${legacyId}`
+              : `https://admin.shopify.com/store/${shopSlug}/orders?query=${encodeURIComponent('#' + cleanOrderNum)}`,
+            orderDate,
+            customerName,
+            clockName
+          };
+        }
+      } catch (err) {
+        debug.error = err.message;
+        console.error('Shopify lookup error:', err);
+      }
+    })
+  );
+
   debug.matchedCount = Object.keys(orderMap).length;
+  debug.unmatchedSample = uniqueNumbers.filter((n) => !orderMap[n]).slice(0, 5);
   return { orderMap, shopSlug, debug };
 }
 
