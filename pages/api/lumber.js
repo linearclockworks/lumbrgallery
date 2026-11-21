@@ -106,10 +106,15 @@ function extractPrimaryClockTitle(lineItemEdges) {
   const items = (lineItemEdges || []).map((e) => e?.node).filter(Boolean);
   if (!items.length) return '';
 
+  // Exclude line items removed via order edits/swaps (currentQuantity === 0)
   const activeItems = items.filter((li) => {
-    const qty = Number(li.quantity || 0);
-    const unfulfilled = li.unfulfilledQuantity != null ? Number(li.unfulfilledQuantity) : qty;
-    return unfulfilled > 0 || qty > 0;
+    if (li.currentQuantity != null) {
+      return Number(li.currentQuantity) > 0;
+    }
+    if (li.unfulfilledQuantity != null) {
+      return Number(li.unfulfilledQuantity) > 0;
+    }
+    return Number(li.quantity || 0) > 0;
   });
   const pool = activeItems.length ? activeItems : items;
 
@@ -177,6 +182,7 @@ async function fetchShopifyOrderDetails(orderNumbers) {
                 node {
                   title
                   quantity
+                  currentQuantity
                   unfulfilledQuantity
                   sku
                   variant {
@@ -192,7 +198,6 @@ async function fetchShopifyOrderDetails(orderNumbers) {
     }
   `;
 
-  // Batch in chunks of 10 so Shopify's search query parser never hits its OR-clause limit
   const CHUNK_SIZE = 10;
   const chunks = [];
   for (let i = 0; i < uniqueNumbers.length; i += CHUNK_SIZE) {
