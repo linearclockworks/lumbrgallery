@@ -185,7 +185,22 @@ export default function LumberGallery() {
       {piece.clockName && (
         <>
           <span>•</span>
-          <span>{piece.clockName}</span>
+          {piece.clockUrl ? (
+            <a
+              href={piece.clockUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                color: '#991b1b',
+                textDecoration: 'underline'
+              }}
+            >
+              {piece.clockName}
+            </a>
+          ) : (
+            <span>{piece.clockName}</span>
+          )}
         </>
       )}
     </div>
@@ -631,6 +646,25 @@ export default function LumberGallery() {
                       </a>
                       {selectedPiece.orderDate ? ` (${selectedPiece.orderDate})` : ''}
                       {selectedPiece.customerName ? ` • ${selectedPiece.customerName}` : ''}
+                    </p>
+                  </div>
+                )}
+                {selectedPiece.clockName && (
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <label style={{ color: 'var(--color-text-secondary)', fontSize: '12px', display: 'block', marginBottom: '4px' }}>Product</label>
+                    <p style={{ margin: 0 }}>
+                      {selectedPiece.clockUrl ? (
+                        <a
+                          href={selectedPiece.clockUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{ color: '#0b61d8', fontWeight: 500 }}
+                        >
+                          {selectedPiece.clockName}
+                        </a>
+                      ) : (
+                        <span style={{ color: 'var(--color-text-primary)' }}>{selectedPiece.clockName}</span>
+                      )}
                     </p>
                   </div>
                 )}
