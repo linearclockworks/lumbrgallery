@@ -84,13 +84,20 @@ export default function LumberGallery() {
     return () => window.removeEventListener('hashchange', onHashChange);
   }, [loading, pieces, showUnavailable]);
 
-  // Reset overlay settings whenever a new piece is selected
+  // Reset overlay settings whenever a new piece is selected & allow Esc to close
   useEffect(() => {
     setEnableOverlay(false);
     setOverlayScale(1.0);
     setOverlayRotation(0);
     setOverlayX(50);
     setOverlayY(50);
+
+    if (!selectedPiece) return;
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') setSelectedPiece(null);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
   }, [selectedPiece]);
 
   const unavailableCount = pieces.filter((p) => p.available === false).length;
@@ -208,7 +215,7 @@ export default function LumberGallery() {
 
   return (
     <div style={{ padding: '1rem 0', background: 'transparent' }}>
-      <h1 style={{ fontSize: '22px', fontWeight: 500, marginBottom: '1.5rem', color: 'var(--color-text-primary)' }}>
+      <h1 style={{ fontSize: '22px', fontWeight: 500, marginBottom: '1.5rem', color: 'var(--color-text-primary, #111827)' }}>
         Lumber inventory
       </h1>
 
@@ -263,9 +270,9 @@ export default function LumberGallery() {
               style={{
                 padding: '6px 12px',
                 fontSize: '12px',
-                background: 'var(--color-background-secondary)',
-                border: '0.5px solid var(--color-border-tertiary)',
-                borderRadius: 'var(--border-radius-lg)',
+                background: 'var(--color-background-secondary, #f8fafc)',
+                border: '0.5px solid var(--color-border-tertiary, #e5e7eb)',
+                borderRadius: 'var(--border-radius-lg, 8px)',
                 cursor: 'pointer'
               }}
             >
@@ -275,12 +282,12 @@ export default function LumberGallery() {
         </div>
       </div>
 
-      {loading && <p style={{ color: 'var(--color-text-secondary)' }}>Loading…</p>}
-      {error && <p style={{ color: 'var(--color-text-danger)' }}>Error: {error}</p>}
+      {loading && <p style={{ color: 'var(--color-text-secondary, #4b5563)' }}>Loading…</p>}
+      {error && <p style={{ color: 'var(--color-text-danger, #dc2626)' }}>Error: {error}</p>}
 
       {!loading && !error && filtered.length > 0 && (
         <div>
-          <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)', marginBottom: '1rem' }}>
+          <p style={{ fontSize: '13px', color: 'var(--color-text-secondary, #4b5563)', marginBottom: '1rem' }}>
             {filtered.length} piece{filtered.length !== 1 ? 's' : ''} found
           </p>
 
@@ -294,11 +301,11 @@ export default function LumberGallery() {
                   id={`board-${piece.serialno}`}
                   key={piece.fileId}
                   style={{
-                    background: 'var(--color-background-primary)',
+                    background: 'var(--color-background-primary, #ffffff)',
                     border: isHighlighted
                       ? '2px solid #0b61d8'
-                      : '0.5px solid var(--color-border-tertiary)',
-                    borderRadius: 'var(--border-radius-lg)',
+                      : '0.5px solid var(--color-border-tertiary, #e5e7eb)',
+                    borderRadius: 'var(--border-radius-lg, 8px)',
                     overflow: 'hidden',
                     transition: 'all 0.2s',
                     scrollMarginTop: '24px',
@@ -306,19 +313,19 @@ export default function LumberGallery() {
                   }}
                   onMouseEnter={(e) => {
                     if (!isHighlighted) {
-                      e.currentTarget.style.borderColor = 'var(--color-border-secondary)';
+                      e.currentTarget.style.borderColor = 'var(--color-border-secondary, #9ca3af)';
                       e.currentTarget.style.boxShadow = '0 0 0 2px rgba(0,0,0,0.05)';
                     }
                   }}
                   onMouseLeave={(e) => {
                     if (!isHighlighted) {
-                      e.currentTarget.style.borderColor = 'var(--color-border-tertiary)';
+                      e.currentTarget.style.borderColor = 'var(--color-border-tertiary, #e5e7eb)';
                       e.currentTarget.style.boxShadow = 'none';
                     }
                   }}
                 >
                   <span id={piece.serialno} />
-                  <div style={{ position: 'relative', overflow: 'hidden', background: 'var(--color-background-secondary)' }}>
+                  <div style={{ position: 'relative', overflow: 'hidden', background: 'var(--color-background-secondary, #f8fafc)' }}>
                     <img
                       src={piece.photoUrl}
                       alt={`${piece.species} ${piece.serialno}`}
@@ -359,21 +366,21 @@ export default function LumberGallery() {
                   {isUnavailable && renderUnavailableBanner(piece, false)}
 
                   <div style={{ padding: '12px' }}>
-                    <p style={{ fontSize: '13px', fontWeight: 500, margin: '0 0 4px 0', color: 'var(--color-text-primary)' }}>
+                    <p style={{ fontSize: '13px', fontWeight: 500, margin: '0 0 4px 0', color: 'var(--color-text-primary, #111827)' }}>
                       #{piece.serialno}
                     </p>
-                    <p style={{ fontSize: '12px', color: 'var(--color-text-secondary)', margin: '0 0 8px 0' }}>
+                    <p style={{ fontSize: '12px', color: 'var(--color-text-secondary, #4b5563)', margin: '0 0 8px 0' }}>
                       {piece.species || '—'}
                     </p>
 
-                    <p style={{ fontSize: '11px', color: 'var(--color-text-secondary)', margin: 0, lineHeight: '1.4' }}>
+                    <p style={{ fontSize: '11px', color: 'var(--color-text-secondary, #4b5563)', margin: 0, lineHeight: '1.4' }}>
                       {piece.owner && <span><strong>Owner:</strong> {piece.owner}</span>}
                       {piece.owner && piece.location && <span> • </span>}
                       {piece.location && <span><strong>Location:</strong> {piece.location}</span>}
                     </p>
 
                     {piece.comments && (
-                      <p style={{ fontSize: '11px', color: 'var(--color-text-secondary)', margin: '4px 0 0 0', fontStyle: 'italic' }}>
+                      <p style={{ fontSize: '11px', color: 'var(--color-text-secondary, #4b5563)', margin: '4px 0 0 0', fontStyle: 'italic' }}>
                         {piece.comments}
                       </p>
                     )}
@@ -386,18 +393,18 @@ export default function LumberGallery() {
       )}
 
       {!loading && !error && filtered.length === 0 && visiblePool.length > 0 && (
-        <p style={{ color: 'var(--color-text-secondary)' }}>No matches found.</p>
+        <p style={{ color: 'var(--color-text-secondary, #4b5563)' }}>No matches found.</p>
       )}
 
       {!loading && !error && missing.length > 0 && (
-        <div style={{ marginTop: '3rem', padding: '1.5rem', background: 'var(--color-background-secondary)', borderRadius: 'var(--border-radius-lg)' }}>
-          <h2 style={{ fontSize: '16px', fontWeight: 500, marginBottom: '1rem', color: 'var(--color-text-primary)' }}>
+        <div style={{ marginTop: '3rem', padding: '1.5rem', background: 'var(--color-background-secondary, #f8fafc)', borderRadius: 'var(--border-radius-lg, 8px)' }}>
+          <h2 style={{ fontSize: '16px', fontWeight: 500, marginBottom: '1rem', color: 'var(--color-text-primary, #111827)' }}>
             Missing Photos ({missing.length})
           </h2>
-          <div style={{ fontSize: '13px', color: 'var(--color-text-secondary)' }}>
+          <div style={{ fontSize: '13px', color: 'var(--color-text-secondary, #4b5563)' }}>
             {missing.map((m) => (
-              <div key={m.serialno} style={{ padding: '8px 0', borderBottom: '0.5px solid var(--color-border-tertiary)' }}>
-                <span style={{ fontWeight: 500, color: 'var(--color-text-primary)' }}>{m.serialno}</span>
+              <div key={m.serialno} style={{ padding: '8px 0', borderBottom: '0.5px solid var(--color-border-tertiary, #e5e7eb)' }}>
+                <span style={{ fontWeight: 500, color: 'var(--color-text-primary, #111827)' }}>{m.serialno}</span>
                 {m.species && m.species !== '—' && <span> • {m.species}</span>}
                 {m.owner && m.owner !== '—' && <span> • Owner: {m.owner}</span>}
                 {m.location && m.location !== '—' && <span> • Loc: {m.location}</span>}
@@ -415,12 +422,12 @@ export default function LumberGallery() {
             left: 0,
             right: 0,
             bottom: 0,
-            background: 'rgba(0,0,0,0.65)',
+            background: 'rgba(0,0,0,0.82)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             zIndex: 1000,
-            padding: '1rem',
+            padding: '0.75rem',
             backdropFilter: 'blur(4px)'
           }}
           onClick={() => setSelectedPiece(null)}
@@ -428,21 +435,22 @@ export default function LumberGallery() {
           <div
             onClick={(e) => e.stopPropagation()}
             style={{
-              background: 'var(--color-background-primary)',
-              borderRadius: 'var(--border-radius-lg)',
-              maxWidth: '750px',
-              width: '100%',
-              maxHeight: '95vh',
+              background: 'var(--color-background-primary, #ffffff)',
+              color: 'var(--color-text-primary, #111827)',
+              borderRadius: '10px',
+              maxWidth: '96vw',
+              width: '96vw',
+              maxHeight: '96vh',
               overflow: 'auto',
-              boxShadow: '0 20px 25px -5px rgba(0,0,0,0.15)'
+              boxShadow: '0 25px 50px -12px rgba(0,0,0,0.45)'
             }}
           >
-            {/* Interactive Workspace Area */}
-            <div style={{ position: 'relative', background: '#111', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+            {/* Full-Screen Interactive Workspace Area */}
+            <div style={{ position: 'relative', background: '#111', display: 'flex', justifyContent: 'center', alignItems: 'center', overflow: 'hidden' }}>
               <img
-                src={selectedPiece.photoUrl}
+                src={selectedPiece.photoUrl.replace(/=w\d+$/, '=w2400')}
                 alt={selectedPiece.species}
-                style={{ width: '100%', display: 'block', maxHeight: '55vh', objectFit: 'contain' }}
+                style={{ width: '100%', display: 'block', maxHeight: '78vh', objectFit: 'contain' }}
               />
 
               {/* Semi-transparent CNC artwork blueprint layer overlay */}
@@ -468,15 +476,16 @@ export default function LumberGallery() {
 
               <button
                 onClick={() => setSelectedPiece(null)}
+                title="Close (Esc)"
                 style={{
                   position: 'absolute',
-                  top: '12px',
-                  right: '12px',
-                  background: 'rgba(0,0,0,0.6)',
-                  border: 'none',
+                  top: '14px',
+                  right: '14px',
+                  background: 'rgba(0,0,0,0.72)',
+                  border: '1px solid rgba(255,255,255,0.25)',
                   color: 'white',
-                  width: '36px',
-                  height: '36px',
+                  width: '40px',
+                  height: '40px',
                   borderRadius: '50%',
                   cursor: 'pointer',
                   display: 'flex',
@@ -492,9 +501,9 @@ export default function LumberGallery() {
 
             {selectedPiece.available === false && renderUnavailableBanner(selectedPiece, true)}
 
-            <div style={{ padding: '1.5rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.2rem', gap: '20px' }}>
-                <h2 style={{ fontSize: '18px', fontWeight: 500, margin: 0, color: 'var(--color-text-primary)', flexGrow: 1 }}>
+            <div style={{ padding: '1.25rem 1.5rem', background: 'var(--color-background-primary, #ffffff)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', gap: '20px' }}>
+                <h2 style={{ fontSize: '18px', fontWeight: 600, margin: 0, color: 'var(--color-text-primary, #111827)', flexGrow: 1 }}>
                   Piece #{selectedPiece.serialno}
                 </h2>
 
@@ -506,9 +515,9 @@ export default function LumberGallery() {
                     fontWeight: 500,
                     cursor: 'pointer',
                     borderRadius: '6px',
-                    backgroundColor: enableOverlay ? 'rgba(0, 255, 242, 0.15)' : 'var(--color-background-secondary)',
-                    border: enableOverlay ? '1px solid rgba(0, 255, 242, 0.6)' : '1px solid var(--color-border-tertiary)',
-                    color: enableOverlay ? 'rgb(0, 200, 190)' : 'var(--color-text-primary)'
+                    backgroundColor: enableOverlay ? 'rgba(0, 200, 190, 0.12)' : 'var(--color-background-secondary, #f8fafc)',
+                    border: enableOverlay ? '1px solid rgb(0, 180, 170)' : '1px solid var(--color-border-tertiary, #d1d5db)',
+                    color: enableOverlay ? 'rgb(0, 140, 130)' : 'var(--color-text-primary, #111827)'
                   }}
                 >
                   {enableOverlay ? '✕ Disable Template Placement' : '📐 Blueprint Overlay'}
@@ -518,11 +527,11 @@ export default function LumberGallery() {
               {enableOverlay && (
                 <div
                   style={{
-                    background: 'var(--color-background-secondary)',
+                    background: 'var(--color-background-secondary, #f8fafc)',
                     padding: '12px 16px',
                     borderRadius: '8px',
-                    marginBottom: '1.5rem',
-                    border: '1px solid var(--color-border-tertiary)'
+                    marginBottom: '1.25rem',
+                    border: '1px solid var(--color-border-tertiary, #e5e7eb)'
                   }}
                 >
                   <div style={{ display: 'flex', gap: '16px', marginBottom: '12px' }}>
@@ -548,7 +557,7 @@ export default function LumberGallery() {
 
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 24px', fontSize: '12px' }}>
                     <div>
-                      <label style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--color-text-secondary)' }}>
+                      <label style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--color-text-secondary, #4b5563)' }}>
                         <span>Scale Factor</span>
                         <span>{overlayScale.toFixed(2)}x</span>
                       </label>
@@ -563,7 +572,7 @@ export default function LumberGallery() {
                       />
                     </div>
                     <div>
-                      <label style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--color-text-secondary)' }}>
+                      <label style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--color-text-secondary, #4b5563)' }}>
                         <span>Twist Rotation</span>
                         <span>{overlayRotation}°</span>
                       </label>
@@ -578,7 +587,7 @@ export default function LumberGallery() {
                       />
                     </div>
                     <div>
-                      <label style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--color-text-secondary)' }}>
+                      <label style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--color-text-secondary, #4b5563)' }}>
                         <span>Horizontal Center (X)</span>
                         <span>{overlayX}%</span>
                       </label>
@@ -593,7 +602,7 @@ export default function LumberGallery() {
                       />
                     </div>
                     <div>
-                      <label style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--color-text-secondary)' }}>
+                      <label style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--color-text-secondary, #4b5563)' }}>
                         <span>Vertical Center (Y)</span>
                         <span>{overlayY}%</span>
                       </label>
@@ -611,30 +620,30 @@ export default function LumberGallery() {
                 </div>
               )}
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', fontSize: '14px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '1rem', fontSize: '14px' }}>
                 <div>
-                  <label style={{ color: 'var(--color-text-secondary)', fontSize: '12px', display: 'block', marginBottom: '4px' }}>Description</label>
-                  <p style={{ margin: 0, color: 'var(--color-text-primary)' }}>{selectedPiece.species || '—'}</p>
+                  <label style={{ color: 'var(--color-text-secondary, #6b7280)', fontSize: '12px', display: 'block', marginBottom: '4px' }}>Description</label>
+                  <p style={{ margin: 0, color: 'var(--color-text-primary, #111827)' }}>{selectedPiece.species || '—'}</p>
                 </div>
                 <div>
-                  <label style={{ color: 'var(--color-text-secondary)', fontSize: '12px', display: 'block', marginBottom: '4px' }}>Owner</label>
-                  <p style={{ margin: 0, color: 'var(--color-text-primary)' }}>{selectedPiece.owner || '—'}</p>
+                  <label style={{ color: 'var(--color-text-secondary, #6b7280)', fontSize: '12px', display: 'block', marginBottom: '4px' }}>Owner</label>
+                  <p style={{ margin: 0, color: 'var(--color-text-primary, #111827)' }}>{selectedPiece.owner || '—'}</p>
                 </div>
                 <div>
-                  <label style={{ color: 'var(--color-text-secondary)', fontSize: '12px', display: 'block', marginBottom: '4px' }}>Length</label>
-                  <p style={{ margin: 0, color: 'var(--color-text-primary)' }}>{selectedPiece.length ? `${selectedPiece.length}"` : '—'}</p>
+                  <label style={{ color: 'var(--color-text-secondary, #6b7280)', fontSize: '12px', display: 'block', marginBottom: '4px' }}>Length</label>
+                  <p style={{ margin: 0, color: 'var(--color-text-primary, #111827)' }}>{selectedPiece.length ? `${selectedPiece.length}"` : '—'}</p>
                 </div>
                 <div>
-                  <label style={{ color: 'var(--color-text-secondary)', fontSize: '12px', display: 'block', marginBottom: '4px' }}>Width</label>
-                  <p style={{ margin: 0, color: 'var(--color-text-primary)' }}>{selectedPiece.width ? `${selectedPiece.width}"` : '—'}</p>
+                  <label style={{ color: 'var(--color-text-secondary, #6b7280)', fontSize: '12px', display: 'block', marginBottom: '4px' }}>Width</label>
+                  <p style={{ margin: 0, color: 'var(--color-text-primary, #111827)' }}>{selectedPiece.width ? `${selectedPiece.width}"` : '—'}</p>
                 </div>
                 <div>
-                  <label style={{ color: 'var(--color-text-secondary)', fontSize: '12px', display: 'block', marginBottom: '4px' }}>Location</label>
-                  <p style={{ margin: 0, color: 'var(--color-text-primary)' }}>{selectedPiece.location || '—'}</p>
+                  <label style={{ color: 'var(--color-text-secondary, #6b7280)', fontSize: '12px', display: 'block', marginBottom: '4px' }}>Location</label>
+                  <p style={{ margin: 0, color: 'var(--color-text-primary, #111827)' }}>{selectedPiece.location || '—'}</p>
                 </div>
                 {selectedPiece.orderNumber && (
                   <div>
-                    <label style={{ color: 'var(--color-text-secondary)', fontSize: '12px', display: 'block', marginBottom: '4px' }}>Shopify Order</label>
+                    <label style={{ color: 'var(--color-text-secondary, #6b7280)', fontSize: '12px', display: 'block', marginBottom: '4px' }}>Shopify Order</label>
                     <p style={{ margin: 0 }}>
                       <a
                         href={selectedPiece.orderAdminUrl}
@@ -651,7 +660,7 @@ export default function LumberGallery() {
                 )}
                 {selectedPiece.clockName && (
                   <div style={{ gridColumn: '1 / -1' }}>
-                    <label style={{ color: 'var(--color-text-secondary)', fontSize: '12px', display: 'block', marginBottom: '4px' }}>Product</label>
+                    <label style={{ color: 'var(--color-text-secondary, #6b7280)', fontSize: '12px', display: 'block', marginBottom: '4px' }}>Product</label>
                     <p style={{ margin: 0 }}>
                       {selectedPiece.clockUrl ? (
                         <a
@@ -663,7 +672,7 @@ export default function LumberGallery() {
                           {selectedPiece.clockName}
                         </a>
                       ) : (
-                        <span style={{ color: 'var(--color-text-primary)' }}>{selectedPiece.clockName}</span>
+                        <span style={{ color: 'var(--color-text-primary, #111827)' }}>{selectedPiece.clockName}</span>
                       )}
                     </p>
                   </div>
@@ -671,19 +680,23 @@ export default function LumberGallery() {
               </div>
 
               {selectedPiece.comments && (
-                <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '0.5px solid var(--color-border-tertiary)' }}>
-                  <label style={{ color: 'var(--color-text-secondary)', fontSize: '12px', display: 'block', marginBottom: '4px' }}>Comments</label>
-                  <p style={{ margin: 0, fontSize: '14px', color: 'var(--color-text-primary)' }}>{selectedPiece.comments}</p>
+                <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '0.5px solid var(--color-border-tertiary, #e5e7eb)' }}>
+                  <label style={{ color: 'var(--color-text-secondary, #6b7280)', fontSize: '12px', display: 'block', marginBottom: '4px' }}>Comments</label>
+                  <p style={{ margin: 0, fontSize: '14px', color: 'var(--color-text-primary, #111827)' }}>{selectedPiece.comments}</p>
                 </div>
               )}
 
               <button
                 onClick={() => setSelectedPiece(null)}
                 style={{
-                  marginTop: '1.5rem',
+                  marginTop: '1.25rem',
                   width: '100%',
-                  padding: '0.5rem 1rem',
-                  cursor: 'pointer'
+                  padding: '0.6rem 1rem',
+                  cursor: 'pointer',
+                  background: '#f3f4f6',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '6px',
+                  fontWeight: 500
                 }}
               >
                 Close
