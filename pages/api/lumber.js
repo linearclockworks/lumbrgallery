@@ -2,11 +2,23 @@ import { google } from 'googleapis';
 
 const SHEET_ID = "1JP9F9BW9XmZEYjleWz3jh4xbZAhtnSry1lQLErEErNs";
 const FOLDER_ID = "1HZ5UYhlecNFZgn_ibUiOK7lzeuxc6t1o";
+const DEFAULT_SHOP_SLUG = "linear-clockworks";
+
+function normalizeShopDomain(rawShop) {
+  const s = String(rawShop || DEFAULT_SHOP_SLUG).trim();
+  if (!s) return `${DEFAULT_SHOP_SLUG}.myshopify.com`;
+  const cleaned = s.replace(/^https?:\/\//i, '').replace(/\/.*$/, '');
+  return cleaned.includes('.') ? cleaned : `${cleaned}.myshopify.com`;
+}
+
+function getShopSlug(shopDomain) {
+  return shopDomain.replace(/\.myshopify\.com$/i, '') || DEFAULT_SHOP_SLUG;
+}
 
 async function getAuth() {
   const credString = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
   if (!credString) throw new Error('GOOGLE_SERVICE_ACCOUNT_KEY not set');
-  
+
   const creds = JSON.parse(credString);
   return new google.auth.GoogleAuth({
     credentials: creds,
@@ -20,34 +32,33 @@ async function getAuth() {
 async function getSheetData() {
   const auth = await getAuth();
   const sheets = google.sheets({ version: 'v4', auth });
-  
+
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId: SHEET_ID,
-    range: 'Lumber!A:H'
+    range: 'Lumber!A:J'
   });
-  
+
   const rows = res.data.values || [];
   const headers = rows[0] || [];
   const data = [];
-  
+
   for (let i = 1; i < rows.length; i++) {
     const row = rows[i];
     const obj = {};
     headers.forEach((h, idx) => {
-      obj[h] = row[idx] || '';
+      obj[String(h || '').trim()] = row[idx] || '';
     });
     data.push(obj);
   }
-  
+
   return data;
 }
 
 async function getPhotoIds() {
   const auth = await getAuth();
   const drive = google.drive({ version: 'v3', auth });
-  
+
   const res = await drive.files.list({
-    // Accepts JPEG, PNG, WebP, and any other image format
     q: `'${FOLDER_ID}' in parents and mimeType contains 'image/' and trashed=false`,
     spaces: 'drive',
     fields: 'files(id, name)',
@@ -55,14 +66,144 @@ async function getPhotoIds() {
     supportsAllDrives: true,
     includeItemsFromAllDrives: true
   });
-  
+
   const photoMap = {};
   for (const file of res.data.files || []) {
     const serial = file.name.split('.').slice(0, -1).join('.').trim().toLowerCase();
     photoMap[serial] = file.id;
   }
-  
+
   return photoMap;
+}
+
+function isClockItem(title, sku) {
+  const s = String(sku || '').trim().toUpperCase();
+  const combined = `${String(title || '')} ${s}`.toUpperCase();
+  if (
+    combined.includes('CLEARTIME') ||
+    combined.includes('CLEAR TIME') ||
+    combined.includes('CTLIGHT') ||
+    combined.includes('SLED')
+  ) {
+    return false;
+  }
+  return s.startsWith('LCK-') || combined.includes('CLOCK');
+}
+
+function extractPrimaryClockTitle(lineItemEdges) {
+  const items = (lineItemEdges || []).map((e) => e?.node).filter(Boolean);
+  if (!items.length) return '';
+
+  const activeItems = items.filter((li) => {
+    const qty = Number(li.quantity || 0);
+    const unfulfilled = li.unfulfilledQuantity != null ? Number(li.unfulfilledQuantity) : qty;
+    return unfulfilled > 0 || qty > 0;
+  });
+  const pool = activeItems.length ? activeItems : items;
+
+  const clockItem = pool.find((li) => {
+    const sku = li.sku || li.variant?.sku || '';
+    return isClockItem(li.title, sku);
+  });
+
+  return String((clockItem || pool[0])?.title || '').trim();
+}
+
+async function fetchShopifyOrderDetails(orderNumbers) {
+  const token = process.env.SHOPIFY_ACCESS_TOKEN;
+  const shopDomain = normalizeShopDomain(process.env.SHOPIFY_SHOP_NAME);
+  const shopSlug = getShopSlug(shopDomain);
+  const apiVersion = process.env.SHOPIFY_API_VERSION || '2024-01';
+
+  const uniqueNumbers = [...new Set(orderNumbers.map((n) => String(n).replace(/^#/, '').trim()).filter(Boolean))];
+  const orderMap = {};
+
+  if (!token || uniqueNumbers.length === 0) {
+    return { orderMap, shopSlug };
+  }
+
+  const queryGql = `
+    query GetOrdersByName($q: String!) {
+      orders(first: 250, query: $q) {
+        edges {
+          node {
+            legacyResourceId
+            name
+            customer {
+              firstName
+              lastName
+            }
+            lineItems(first: 20) {
+              edges {
+                node {
+                  title
+                  quantity
+                  unfulfilledQuantity
+                  sku
+                  variant {
+                    sku
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  `;
+
+  // Batch in chunks of 40 order numbers per GraphQL request
+  for (let i = 0; i < uniqueNumbers.length; i += 40) {
+    const chunk = uniqueNumbers.slice(i, i + 40);
+    const searchQuery = chunk.map((num) => `name:#${num}`).join(' OR ');
+
+    try {
+      const resp = await fetch(`https://${shopDomain}/admin/api/${apiVersion}/graphql.json`, {
+        method: 'POST',
+        headers: {
+          'X-Shopify-Access-Token': token,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          query: queryGql,
+          variables: { q: searchQuery }
+        })
+      });
+
+      if (!resp.ok) {
+        console.error(`Shopify API HTTP ${resp.status}`);
+        continue;
+      }
+
+      const json = await resp.json();
+      const edges = json?.data?.orders?.edges || [];
+
+      for (const edge of edges) {
+        const node = edge?.node;
+        if (!node) continue;
+
+        const cleanOrderNum = String(node.name || '').replace(/^#/, '').trim();
+        const first = String(node.customer?.firstName || '').trim();
+        const last = String(node.customer?.lastName || '').trim();
+        const customerName = `${first} ${last}`.trim();
+        const clockName = extractPrimaryClockTitle(node.lineItems?.edges);
+        const legacyId = String(node.legacyResourceId || '').trim();
+
+        orderMap[cleanOrderNum] = {
+          orderNumber: cleanOrderNum,
+          orderAdminUrl: legacyId
+            ? `https://admin.shopify.com/store/${shopSlug}/orders/${legacyId}`
+            : `https://admin.shopify.com/store/${shopSlug}/orders?query=${encodeURIComponent('#' + cleanOrderNum)}`,
+          customerName,
+          clockName
+        };
+      }
+    } catch (err) {
+      console.error('Shopify lookup error:', err);
+    }
+  }
+
+  return { orderMap, shopSlug };
 }
 
 export default async function handler(req, res) {
@@ -71,46 +212,68 @@ export default async function handler(req, res) {
       getSheetData(),
       getPhotoIds()
     ]);
-    
+
+    const orderNumbersToLookup = [];
+    for (const row of sheetData) {
+      const orderNum = String(row['Order Number'] || '').replace(/^#/, '').trim();
+      if (orderNum) {
+        orderNumbersToLookup.push(orderNum);
+      }
+    }
+
+    const { orderMap, shopSlug } = await fetchShopifyOrderDetails(orderNumbersToLookup);
+
     const pieces = [];
     const missing = [];
-    
+
     for (const row of sheetData) {
       const serial = String(row.Serial || '').trim();
       if (!serial) continue;
-      
+
       const availRaw = String(row.Available || '').trim().toLowerCase();
       const available = availRaw === 'y';
-      
+
       const fileId = photoIds[serial.toLowerCase()];
       const photoUrl = fileId ? `https://lh3.googleusercontent.com/d/${fileId}=w1200` : null;
-      
+
+      const orderNumber = String(row['Order Number'] || '').replace(/^#/, '').trim();
+      const shopifyOrder = orderNumber ? orderMap[orderNumber] : null;
+
+      const orderAdminUrl = orderNumber
+        ? (shopifyOrder?.orderAdminUrl ||
+          `https://admin.shopify.com/store/${shopSlug}/orders?query=${encodeURIComponent('#' + orderNumber)}`)
+        : '';
+
       const piece = {
         filename: `${serial}.jpeg`,
         fileId: serial,
         photoUrl: photoUrl,
         serialno: serial,
-        species: row.Description || "",
-        length: "",
-        width: "",
-        owner: row.Owner || "",
-        location: row.Location || "",
-        comments: row.Comments || "",
-        available: available
+        species: row.Description || '',
+        length: '',
+        width: '',
+        owner: row.Owner || '',
+        location: row.Location || '',
+        comments: row.Comments || '',
+        available: available,
+        orderNumber: orderNumber,
+        orderAdminUrl: orderAdminUrl,
+        customerName: shopifyOrder?.customerName || '',
+        clockName: shopifyOrder?.clockName || ''
       };
-      
+
       if (photoUrl) {
         pieces.push(piece);
       } else if (available) {
         missing.push({
           serialno: serial,
-          species: row.Description || "—",
-          owner: row.Owner || "—",
-          location: row.Location || "—"
+          species: row.Description || '—',
+          owner: row.Owner || '—',
+          location: row.Location || '—'
         });
       }
     }
-    
+
     res.status(200).json({ pieces, missing });
   } catch (err) {
     console.error('Error:', err);

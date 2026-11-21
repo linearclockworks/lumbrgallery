@@ -111,10 +111,14 @@ export default function LumberGallery() {
   };
 
   let filtered = visiblePool.filter((piece) => {
+    const q = searchTerm.toLowerCase();
     const matchesSearch =
-      piece.serialno.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      piece.species.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      piece.comments.toLowerCase().includes(searchTerm.toLowerCase());
+      piece.serialno.toLowerCase().includes(q) ||
+      piece.species.toLowerCase().includes(q) ||
+      piece.comments.toLowerCase().includes(q) ||
+      (piece.orderNumber && piece.orderNumber.toLowerCase().includes(q)) ||
+      (piece.customerName && piece.customerName.toLowerCase().includes(q)) ||
+      (piece.clockName && piece.clockName.toLowerCase().includes(q));
 
     const matchesSpecies = !filterSpecies || piece.species === filterSpecies;
     const matchesOwner = !filterOwner || piece.owner === filterOwner;
@@ -122,6 +126,62 @@ export default function LumberGallery() {
     const matchesFavorite = !showOnlyFavorites || favorites.has(piece.serialno);
     return matchesSearch && matchesSpecies && matchesOwner && matchesLocation && matchesFavorite;
   });
+
+  const renderUnavailableBanner = (piece, isModal = false) => (
+    <div
+      style={{
+        background: '#fee2e2',
+        color: '#991b1b',
+        borderTop: isModal ? 'none' : '1px solid #fca5a5',
+        borderBottom: '1px solid #fca5a5',
+        padding: isModal ? '8px 14px' : '7px 12px',
+        fontSize: '12px',
+        textAlign: 'center',
+        display: 'flex',
+        flexWrap: 'wrap',
+        justifyContent: 'center',
+        alignItems: 'center',
+        gap: '8px'
+      }}
+    >
+      <span style={{ fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+        Unavailable
+      </span>
+
+      {piece.orderNumber && (
+        <>
+          <span>•</span>
+          <a
+            href={piece.orderAdminUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              color: '#991b1b',
+              fontWeight: 700,
+              textDecoration: 'underline'
+            }}
+          >
+            Order #{piece.orderNumber}
+          </a>
+        </>
+      )}
+
+      {piece.customerName && (
+        <>
+          <span>•</span>
+          <span style={{ fontWeight: 600 }}>{piece.customerName}</span>
+        </>
+      )}
+
+      {piece.clockName && (
+        <>
+          <span>•</span>
+          <span>{piece.clockName}</span>
+        </>
+      )}
+    </div>
+  );
 
   return (
     <div style={{ padding: '1rem 0', background: 'transparent' }}>
@@ -132,7 +192,7 @@ export default function LumberGallery() {
       <div style={{ marginBottom: '1.5rem' }}>
         <input
           type="text"
-          placeholder="Search by serial number, description, or comments…"
+          placeholder="Search by serial #, description, comments, order #, customer, or clock…"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           style={{ width: '100%', marginBottom: '1rem' }}
@@ -273,24 +333,7 @@ export default function LumberGallery() {
                     </button>
                   </div>
 
-                  {isUnavailable && (
-                    <div
-                      style={{
-                        background: '#fee2e2',
-                        color: '#991b1b',
-                        borderTop: '1px solid #fca5a5',
-                        borderBottom: '1px solid #fca5a5',
-                        padding: '6px 12px',
-                        fontSize: '12px',
-                        fontWeight: 700,
-                        letterSpacing: '0.08em',
-                        textTransform: 'uppercase',
-                        textAlign: 'center'
-                      }}
-                    >
-                      Unavailable
-                    </div>
-                  )}
+                  {isUnavailable && renderUnavailableBanner(piece, false)}
 
                   <div style={{ padding: '12px' }}>
                     <p style={{ fontSize: '13px', fontWeight: 500, margin: '0 0 4px 0', color: 'var(--color-text-primary)' }}>
@@ -378,7 +421,7 @@ export default function LumberGallery() {
                 alt={selectedPiece.species}
                 style={{ width: '100%', display: 'block', maxHeight: '55vh', objectFit: 'contain' }}
               />
-              
+
               {/* Semi-transparent CNC artwork blueprint layer overlay */}
               {enableOverlay && (
                 <img
@@ -399,7 +442,7 @@ export default function LumberGallery() {
                   }}
                 />
               )}
-              
+
               <button
                 onClick={() => setSelectedPiece(null)}
                 style={{
@@ -424,31 +467,15 @@ export default function LumberGallery() {
               </button>
             </div>
 
-            {selectedPiece.available === false && (
-              <div
-                style={{
-                  background: '#fee2e2',
-                  color: '#991b1b',
-                  borderBottom: '1px solid #fca5a5',
-                  padding: '8px 14px',
-                  fontSize: '12px',
-                  fontWeight: 700,
-                  letterSpacing: '0.08em',
-                  textTransform: 'uppercase',
-                  textAlign: 'center'
-                }}
-              >
-                Unavailable
-              </div>
-            )}
+            {selectedPiece.available === false && renderUnavailableBanner(selectedPiece, true)}
 
             <div style={{ padding: '1.5rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.2rem', gap: '20px' }}>
                 <h2 style={{ fontSize: '18px', fontWeight: 500, margin: 0, color: 'var(--color-text-primary)', flexGrow: 1 }}>
                   Piece #{selectedPiece.serialno}
                 </h2>
-                
-                <button 
+
+                <button
                   onClick={() => setEnableOverlay(!enableOverlay)}
                   style={{
                     padding: '6px 14px',
@@ -466,41 +493,49 @@ export default function LumberGallery() {
               </div>
 
               {enableOverlay && (
-                <div style={{ 
-                  background: 'var(--color-background-secondary)', 
-                  padding: '12px 16px', 
-                  borderRadius: '8px', 
-                  marginBottom: '1.5rem',
-                  border: '1px solid var(--color-border-tertiary)'
-                }}>
+                <div
+                  style={{
+                    background: 'var(--color-background-secondary)',
+                    padding: '12px 16px',
+                    borderRadius: '8px',
+                    marginBottom: '1.5rem',
+                    border: '1px solid var(--color-border-tertiary)'
+                  }}
+                >
                   <div style={{ display: 'flex', gap: '16px', marginBottom: '12px' }}>
                     <label style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
-                      <input 
-                        type="radio" 
-                        name="tmpl" 
-                        checked={overlayTemplate === '3ft'} 
-                        onChange={() => setOverlayType('3ft')} 
-                      /> 3-Foot Devangari Layout
+                      <input
+                        type="radio"
+                        name="tmpl"
+                        checked={overlayTemplate === '3ft'}
+                        onChange={() => setOverlayType('3ft')}
+                      />{' '}
+                      3-Foot Devangari Layout
                     </label>
                     <label style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
-                      <input 
-                        type="radio" 
-                        name="tmpl" 
-                        checked={overlayTemplate === '5ft'} 
-                        onChange={() => setOverlayType('5ft')} 
-                      /> 5-Foot Apple Gothic Layout
+                      <input
+                        type="radio"
+                        name="tmpl"
+                        checked={overlayTemplate === '5ft'}
+                        onChange={() => setOverlayType('5ft')}
+                      />{' '}
+                      5-Foot Apple Gothic Layout
                     </label>
                   </div>
-                  
+
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 24px', fontSize: '12px' }}>
                     <div>
                       <label style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--color-text-secondary)' }}>
                         <span>Scale Factor</span>
                         <span>{overlayScale.toFixed(2)}x</span>
                       </label>
-                      <input 
-                        type="range" min="0.2" max="4.0" step="0.05" value={overlayScale} 
-                        onChange={(e) => setOverlayScale(parseFloat(e.target.value))} 
+                      <input
+                        type="range"
+                        min="0.2"
+                        max="4.0"
+                        step="0.05"
+                        value={overlayScale}
+                        onChange={(e) => setOverlayScale(parseFloat(e.target.value))}
                         style={{ width: '100%', margin: '4px 0' }}
                       />
                     </div>
@@ -509,9 +544,13 @@ export default function LumberGallery() {
                         <span>Twist Rotation</span>
                         <span>{overlayRotation}°</span>
                       </label>
-                      <input 
-                        type="range" min="-180" max="180" step="1" value={overlayRotation} 
-                        onChange={(e) => setOverlayRotation(parseInt(e.target.value))} 
+                      <input
+                        type="range"
+                        min="-180"
+                        max="180"
+                        step="1"
+                        value={overlayRotation}
+                        onChange={(e) => setOverlayRotation(parseInt(e.target.value))}
                         style={{ width: '100%', margin: '4px 0' }}
                       />
                     </div>
@@ -520,9 +559,13 @@ export default function LumberGallery() {
                         <span>Horizontal Center (X)</span>
                         <span>{overlayX}%</span>
                       </label>
-                      <input 
-                        type="range" min="0" max="100" step="1" value={overlayX} 
-                        onChange={(e) => setOverlayX(parseInt(e.target.value))} 
+                      <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        step="1"
+                        value={overlayX}
+                        onChange={(e) => setOverlayX(parseInt(e.target.value))}
                         style={{ width: '100%', margin: '4px 0' }}
                       />
                     </div>
@@ -531,9 +574,13 @@ export default function LumberGallery() {
                         <span>Vertical Center (Y)</span>
                         <span>{overlayY}%</span>
                       </label>
-                      <input 
-                        type="range" min="0" max="100" step="1" value={overlayY} 
-                        onChange={(e) => setOverlayY(parseInt(e.target.value))} 
+                      <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        step="1"
+                        value={overlayY}
+                        onChange={(e) => setOverlayY(parseInt(e.target.value))}
                         style={{ width: '100%', margin: '4px 0' }}
                       />
                     </div>
@@ -562,6 +609,22 @@ export default function LumberGallery() {
                   <label style={{ color: 'var(--color-text-secondary)', fontSize: '12px', display: 'block', marginBottom: '4px' }}>Location</label>
                   <p style={{ margin: 0, color: 'var(--color-text-primary)' }}>{selectedPiece.location || '—'}</p>
                 </div>
+                {selectedPiece.orderNumber && (
+                  <div>
+                    <label style={{ color: 'var(--color-text-secondary)', fontSize: '12px', display: 'block', marginBottom: '4px' }}>Shopify Order</label>
+                    <p style={{ margin: 0 }}>
+                      <a
+                        href={selectedPiece.orderAdminUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ color: '#0b61d8', fontWeight: 500 }}
+                      >
+                        #{selectedPiece.orderNumber}
+                      </a>
+                      {selectedPiece.customerName ? ` • ${selectedPiece.customerName}` : ''}
+                    </p>
+                  </div>
+                )}
               </div>
 
               {selectedPiece.comments && (
